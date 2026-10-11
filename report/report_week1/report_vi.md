@@ -72,6 +72,56 @@ gồm 25 features này nằm tại `processed_dataset_v2/features.csv`.
 | `spa_q2` | 3 | 0, 3, 10 |
 | `tem_velocity_mean` | 3 | 3, 5, 8 |
 
+### 2.1 Định nghĩa 25 features được chọn
+
+Mỗi feature là một giá trị vô hướng cho mỗi (người tham gia, task), tính từ
+tập fixation sạch của cặp đó (`src/begad_norm/features/`). Ký hiệu: `n` = số
+fixation sạch; `x, y` = tọa độ fixation (`FixationPointX/Y (MCSpx)`, px,
+tương đối với media); `dur` = thời lượng fixation (`GazeEventDuration`, ms);
+`pup` = pupil trung bình 2 mắt `(PupilLeft + PupilRight) / 2` (mm);
+`(cx, cy) = (W/2, H/2)` = tâm media theo `TASK_GEOMETRY` (config.py). Mọi std
+dùng `ddof=1` (SD mẫu). Từ điển đầy đủ 72 features:
+`EDA/features_dictionary_vi.md`.
+
+| Feature | Ý nghĩa | Cách tính | Đơn vị |
+|---|---|---|---|
+| **Pupil — kích thước & động học đồng tử (chuỗi theo thứ tự thời gian fixation)** | | | |
+| `pup_mean` | Kích thước đồng tử trung bình trong task | `mean(pup_i)` với `pup_i = (PupilLeft_i + PupilRight_i) / 2` trên các fixation sạch | mm |
+| `pup_median` | Kích thước đồng tử trung vị | `median(pup_i)` | mm |
+| `pup_max` / `pup_min` | Đồng tử lớn nhất / nhỏ nhất | `max` / `min` của chuỗi | mm |
+| `pup_std` | Mức biến thiên kích thước đồng tử | SD mẫu (`ddof=1`) của chuỗi | mm |
+| `pup_slope` | Xu hướng đồng tử theo thời gian (dương = giãn dần, âm = co dần) | độ dốc của đường hồi quy bình phương tối thiểu (`np.polyfit`, bậc 1) của chuỗi theo thứ tự fixation `0…n−1` | mm / chỉ số fixation |
+| `pupbl_std` | Biến thiên sau khi trừ baseline | như `pup_std` trên chuỗi đã trừ baseline `((PupilLeft_i − PupilLeftBaseline) + (PupilRight_i − PupilRightBaseline)) / 2` (baseline là hằng số theo recording) | mm |
+| `pupbl_slope` | Xu hướng đồng tử đã trừ baseline | như `pup_slope` trên chuỗi đã trừ baseline | mm / chỉ số fixation |
+| **Saccade — saccade đo thực (các dòng `Final` gom thành runs)** | | | |
+| `sac_count` | Số lượng saccade | `m` = số saccade runs (các dòng saccade `Final` liên tiếp theo thời gian có chung fixation hạ cánh) | đếm |
+| `sac_dur_total` | Tổng thời gian dành cho saccade | tổng thời lượng các runs; `run_dur` = max `GazeEventDuration` trong run | ms |
+| `sac_dur_mean` | Thời lượng saccade trung bình | trung bình thời lượng các runs | ms |
+| `sac_dur_max` | Saccade dài nhất | max thời lượng các runs | ms |
+| `sac_amp_mean` | Biên độ saccade trung bình | trung bình `SaccadicAmplitude` gắn theo từng fixation (biên độ saccade hạ cánh vào fixation đó) | độ (góc nhìn) |
+| `sac_amp_std` | Mức biến thiên biên độ saccade | SD mẫu (`ddof=1`) của các biên độ đó | độ |
+| `sac_turn_std` | Mức biến thiên góc đổi hướng giữa các saccade liên tiếp | SD mẫu (`ddof=1`) của `min(reldir, 360 − reldir)` từ `RelativeSaccadicDirection`, gập về `[0, 180]` | độ |
+| **Không gian — vị trí & độ phân tán fixation** | | | |
+| `spa_fix_count` | Số fixation | `n` = số fixation sạch còn lại sau làm sạch | đếm |
+| `spa_center_dist_std` | Độ phân tán của fixation quanh tâm media | SD mẫu (`ddof=1`) của các khoảng cách `sqrt((x−cx)² + (y−cy)²)` | px |
+| `spa_dispersion` | Khoảng cách trung bình từ fixation tới trọng tâm của chúng | `mean(sqrt((x−mean(x))² + (y−mean(y))²))` | px |
+| `spa_q2` | Tỷ lệ fixation ở góc phần tư q2 (bên phải tâm, nửa trên) | tỷ lệ fixation có `x ≥ cx` và `y < cy` | tỷ lệ 0–1 |
+| **Hình học — hình dạng scanpath (saccade suy diễn giữa các fixation liên tiếp)** | | | |
+| `geo_scanpath_len` | Tổng độ dài scanpath | tổng độ dài bước `amp = sqrt(dx² + dy²)`, `dx = diff(x)`, `dy = diff(y)` | px |
+| `geo_sacc_amp_mean` | Biên độ trung bình của bước nhảy (saccade suy diễn) | `mean(amp)` | px |
+| `geo_nn_dist_mean` | Mức độ thưa/dày của fixation (độ đặc của scanpath) | trung bình khoảng cách tới fixation *khác* gần nhất | px |
+| `geo_revisit_rate` | Xu hướng quay lại vị trí đã nhìn | tỷ lệ fixation có fixation *về sau* cách trong 60 px (`REVISIT_RADIUS`; chỉ nhìn về trước, `triu(dist < 60, k = 1)`) | tỷ lệ 0–1 |
+| **Thời gian** | | | |
+| `tem_dur_total` | Tổng thời gian fixation | tổng thời lượng các fixation | ms |
+| `tem_velocity_mean` | Vận tốc trung bình của scanpath | `mean(amp / half_gap)` chỉ trên các giá trị hữu hạn, `half_gap = (dur_i + dur_{i+1}) / 2` (xấp xỉ IFI nửa dwell; không ghi onset timestamp) | px/ms |
+
+Quy tắc NaN: `pupbl_*` NaN với 16 người có baseline pupil bị thiếu trong dữ
+liệu gốc (ở Bảng 1, n của họ là 89/38/14 cho CO/MCI/AD thay vì 100/41/16);
+cặp có `n < 2` nhận dòng all-NaN (`BEGCO-029`, `BEGMCI-019` × task 10);
+`sac_dur_*` NaN nếu `m = 0`; `pup_slope`, `pupbl_slope`, `geo_*` NaN nếu
+`n < 2`; `tem_velocity_mean` NaN nếu không có giá trị `amp / half_gap` hữu
+hạn nào.
+
 ## 3. Bảng so sánh nhóm — H và p của 25 features × 11 tasks
 
 **Bảng 1.** Thống kê Kruskal–Wallis H, p chưa hiệu chỉnh, q_bh

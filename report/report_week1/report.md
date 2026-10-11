@@ -72,6 +72,55 @@ features is `processed_dataset_v2/features.csv`.
 | `spa_q2` | 3 | 0, 3, 10 |
 | `tem_velocity_mean` | 3 | 3, 5, 8 |
 
+### 2.1 Definitions of the 25 selected features
+
+Each feature is one scalar per (participant, task), computed from the clean
+fixations of that pair (`src/begad_norm/features/`). Notation: `n` = number of
+clean fixations; `x, y` = fixation centers (`FixationPointX/Y (MCSpx)`, px,
+media-relative); `dur` = fixation duration (`GazeEventDuration`, ms); `pup` =
+binocular mean pupil `(PupilLeft + PupilRight) / 2` (mm); `(cx, cy) = (W/2,
+H/2)` = media center from `TASK_GEOMETRY` (config.py). All stds use `ddof=1`
+(sample SD). The full 72-feature dictionary: `EDA/features_dictionary.md`.
+
+| Feature | Meaning | How it is computed | Unit |
+|---|---|---|---|
+| **Pupil — pupil size and dynamics (series in fixation-time order)** | | | |
+| `pup_mean` | Average pupil size during the task | `mean(pup_i)` with `pup_i = (PupilLeft_i + PupilRight_i) / 2` over the clean fixations | mm |
+| `pup_median` | Median pupil size | `median(pup_i)` | mm |
+| `pup_max` / `pup_min` | Largest / smallest pupil size | `max` / `min` of the series | mm |
+| `pup_std` | Variability of pupil size | sample SD (`ddof=1`) of the series | mm |
+| `pup_slope` | Pupil trend over the task (positive = dilation, negative = constriction) | slope of the least-squares line (`np.polyfit`, degree 1) of the series over fixation order `0…n−1` | mm per fixation index |
+| `pupbl_std` | Variability after baseline correction | as `pup_std` on the baseline-corrected series `((PupilLeft_i − PupilLeftBaseline) + (PupilRight_i − PupilRightBaseline)) / 2` (baselines constant per recording) | mm |
+| `pupbl_slope` | Baseline-corrected pupil trend | as `pup_slope` on the baseline-corrected series | mm per fixation index |
+| **Saccade — measured saccade events (`Final` rows collapsed into runs)** | | | |
+| `sac_count` | Number of saccades | `m` = number of saccade runs (consecutive `Final` saccade rows in time order sharing the same landing fixation) | count |
+| `sac_dur_total` | Total time spent in saccades | sum of run durations; `run_dur` = max `GazeEventDuration` within the run | ms |
+| `sac_dur_mean` | Average saccade duration | mean of the run durations | ms |
+| `sac_dur_max` | Longest saccade | max of the run durations | ms |
+| `sac_amp_mean` | Average saccade amplitude | mean of the per-fixation `SaccadicAmplitude` (amplitude of the saccade landing on each fixation) | deg (visual angle) |
+| `sac_amp_std` | Variability of saccade amplitude | sample SD (`ddof=1`) of those amplitudes | deg |
+| `sac_turn_std` | Variability of direction changes between consecutive saccades | sample SD (`ddof=1`) of `min(reldir, 360 − reldir)` from `RelativeSaccadicDirection`, folded to `[0, 180]` | deg |
+| **Spatial — fixation positions and spread** | | | |
+| `spa_fix_count` | Number of fixations | `n` = clean fixations remaining after cleaning | count |
+| `spa_center_dist_std` | Spread of the fixations around the media center | sample SD (`ddof=1`) of the distances `sqrt((x−cx)² + (y−cy)²)` | px |
+| `spa_dispersion` | Average distance of the fixations from their centroid | `mean(sqrt((x−mean(x))² + (y−mean(y))²))` | px |
+| `spa_q2` | Share of fixations in quadrant q2 (right of center, upper half) | fraction of fixations with `x ≥ cx` and `y < cy` | fraction 0–1 |
+| **Geometry — scanpath shape (inferred saccades between consecutive fixations)** | | | |
+| `geo_scanpath_len` | Total scanpath length | sum of step lengths `amp = sqrt(dx² + dy²)`, `dx = diff(x)`, `dy = diff(y)` | px |
+| `geo_sacc_amp_mean` | Average step (inferred saccade) amplitude | `mean(amp)` | px |
+| `geo_nn_dist_mean` | Spacing of the fixations (how dense the scanpath is) | mean over fixations of the distance to the nearest *other* fixation | px |
+| `geo_revisit_rate` | Tendency to return to already visited locations | fraction of fixations with a *later* fixation within 60 px (`REVISIT_RADIUS`; forward-looking, `triu(dist < 60, k = 1)`) | fraction 0–1 |
+| **Temporal — timing** | | | |
+| `tem_dur_total` | Total fixation time | sum of the fixation durations | ms |
+| `tem_velocity_mean` | Average scanpath velocity | mean of `amp / half_gap` over the finite terms, `half_gap = (dur_i + dur_{i+1}) / 2` (half-dwell inter-fixation interval approximation; onset timestamps are not recorded) | px/ms |
+
+NaN rules: `pupbl_*` is NaN for the 16 participants whose pupil baselines are
+missing in the raw data (in Table 1 their n is 89/38/14 for CO/MCI/AD instead
+of 100/41/16); pairs with `n < 2` get an all-NaN row (`BEGCO-029`,
+`BEGMCI-019` × task 10); `sac_dur_*` is NaN if `m = 0`; `pup_slope`,
+`pupbl_slope`, `geo_*` are NaN if `n < 2`; `tem_velocity_mean` is NaN if no
+`amp / half_gap` term is finite.
+
 ## 3. Group comparison table — H and p for the 25 features × 11 tasks
 
 **Table 1.** Kruskal–Wallis H, uncorrected p, Benjamini–Hochberg q_bh, and
