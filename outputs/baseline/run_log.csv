@@ -1,0 +1,4 @@
+timestamp_utc,mode,problems,models,seeds,folds,n_rows,duration_s,status
+2026-10-11T18:35:09+00:00,smoke,co_vs_mci,"logistic_regression,svm_rbf,svm_linear,fnn,qda,gnb",1,1,4,-1,"failed-qda-svd-p>n (275 feat); rerun with solver=eigen, shrinkage=0.5"
+2026-10-11T18:35:13+00:00,smoke,co_vs_mci,"logistic_regression,svm_rbf,svm_linear,fnn,qda,gnb",1,1,6,3.4,ok
+2026-10-11T18:36:55+00:00,full,"co_vs_mci,co_vs_ad,co_mci_ad","logistic_regression,svm_rbf,svm_linear,fnn,qda,gnb","1,2,3,4,5,6,7,8,9,10","1,2,3,4",720,82.6,ok

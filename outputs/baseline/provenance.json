@@ -1,0 +1,22 @@
+{
+  "timestamp_utc": "2026-10-11T18:36:55+00:00",
+  "host": "ad283595fd9f",
+  "python": "3.12.3",
+  "command": "src/baseline/run_baselines.py --config src/baseline/config_v2.yaml",
+  "git_commit": "92e3a9a45cbe0bc26f327c9bbe93a29bc47f0992",
+  "git_dirty": true,
+  "config_sha256": "fea714032d02418df5e091df91171d9a4bcd73808292fa75d343c45d2dff2581",
+  "data_sha256": {
+    "features_csv": "3b5ad9d8322b2dd080d0f433bf91a3b60cb077402415d0b21900073a55c304ea",
+    "metadata_csv": "e1616da8bfe6b4bcf284c062d902b7578f6c39510d74383300be65fe67a66001",
+    "v2_features_csv": "0c27849c7b126d70ac5498007724926f87f131f5e0d69d949666bc3037e2139b"
+  },
+  "packages": {
+    "numpy": "2.5.4",
+    "pandas": "3.0.6",
+    "scikit-learn": "1.9.1",
+    "scipy": "1.18.1",
+    "PyYAML": "6.0.3"
+  },
+  "n_rows": 720
+}
