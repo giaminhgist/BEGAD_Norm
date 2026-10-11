@@ -1,0 +1,15 @@
+participants: 157
+rows: 1727 x 74 (72 features + 2 id cols)
+all-NaN rows: 2
+all-NaN pairs:
+  BEGCO-029 task 10
+  BEGMCI-019 task 10
+stage drops (all participants): raw=587058, fixation_filter_dropped=470401, duration_dropped=2, bounds_dropped=0, pupil_dropped=381, clean=116274
+group counts: 0=100, 1=41, 2=16
+participants with NaN pupil baselines (pupbl_* NaN): 16
+per-feature NaN fraction (worst 5):
+  pupbl_mean: 10.3069%
+  pupbl_std: 10.3069%
+  pupbl_min: 10.3069%
+  pupbl_max: 10.3069%
+  pupbl_median: 10.3069%
