@@ -46,8 +46,8 @@ stimulus kiểm tra.
 ## 2. Features (72)
 
 72 feature được tính cho mỗi (người tham gia, task) từ các fixation sạch (xem
-`EDA/features_dictionary_vi.md` để biết công thức và đơn vị; bản tiếng Anh:
-`EDA/features_dictionary.md`). Phân nhóm theo tiền tố:
+`docs/baseline/eda_summary_vi.md` để biết quy trình làm sạch, công thức và đơn vị; bản
+tiếng Anh: `docs/baseline/eda_summary.md`). Phân nhóm theo tiền tố:
 
 | Tiền tố | n | Ý nghĩa |
 |---|---|---|
@@ -138,8 +138,9 @@ Danh sách đầy đủ:
 
 ## 3. Các feature được chọn (25)
 
-Sàng lọc từ `EDA/group_comparison_stats_per_task.csv`: các feature có p-value
-Kruskal–Wallis < 0.1 (chưa hiệu chỉnh) ở **ít nhất 3 trong 11 tasks**. Chỉ mang
+Sàng lọc từ `processed_dataset/group_comparison_stats_per_task.csv`: các
+feature có p-value Kruskal–Wallis < 0.1 (chưa hiệu chỉnh) ở **ít nhất 3 trong
+11 tasks**. Chỉ mang
 tính thăm dò — tổng cộng 792 kiểm định đã chạy, vì vậy đa kiểm định là điều
 được dự kiến.
 
@@ -177,8 +178,9 @@ Trong số đó, **8 features** có p < 0.1 ở cả ba thẻ King–Devick (tas
 `spa_fix_count`, `geo_sacc_amp_mean`, `geo_revisit_rate`, `geo_nn_dist_mean`, `pup_mean`, `pup_median`, `sac_count`, `sac_dur_total`.
 
 - Thống kê đầy đủ (H, p, q_bh, trung bình theo nhóm) cho 72 features × 11
-  tasks: `EDA/comparison_summary_vi.md` (tiếng Anh: `EDA/comparison_summary.md`).
-- Dữ liệu chỉ gồm 25 feature được chọn: `processed_dataset_v2/`.
+  tasks: `docs/baseline/eda_summary_vi.md` (tiếng Anh: `docs/baseline/eda_summary.md`).
+- Bộ feature chính thức (25 feature): `finalized_dataset/` — dùng cho mọi thí
+  nghiệm từ nay về sau.
 
 ## 4. Danh sách mở rộng (39 features, p < 0.2)
 
@@ -237,18 +239,19 @@ chỉ nên dùng làm tập ứng viên sàng lọc rộng.
 | Đường dẫn | Nội dung |
 |---|---|
 | `dataset/`, `dataset_v2/` | file raw xuất từ eye-tracker (2025-03-05) |
-| `processed_dataset/` | features (72) + metadata của 157 người tham gia |
-| `processed_dataset_v2/` | tập con 25 feature được chọn |
+| `processed_dataset/` | features (72) + metadata của 157 người tham gia + thống kê sàng lọc |
+| `finalized_dataset/` | bộ feature chính thức (25 feature được chọn) |
 | `processed_dataset_v3/` | tập con 39 feature (p < 0.2 ở ≥ 3 tasks) |
-| `EDA/` | notebook, từ điển feature, tóm tắt so sánh nhóm |
-| `report/` | các report |
-| `src/begad_norm/` | mã trích xuất feature và cấu hình |
+| `fold/` | phân fold 4-fold mức người tham gia (CSV) |
+| `docs/baseline/` | tài liệu dự án (EN + VI): tổng hợp EDA, chia fold, so sánh baseline, baseline bộ dataset chính thức |
+| `outputs/` | kết quả thí nghiệm (baseline, provenance, nhật ký chạy) |
+| `src/begad_norm/` | mã trích xuất feature, cấu hình và thí nghiệm baseline |
 | `tests/` | unit test (config, raw data, features) |
 
 ## Ghi chú
 
 - p-value dùng để sàng lọc là p-value Kruskal–Wallis chưa hiệu chỉnh; `q_bh`
   (Benjamini–Hochberg trên toàn bộ 792 kiểm định) có sẵn trong
-  `EDA/comparison_summary_vi.md`.
+  `docs/baseline/eda_summary_vi.md`.
 - Giá trị feature trên các task màn hình hướng dẫn (0, 2, 6, 8, 10) mô tả việc
   đọc hướng dẫn, không phải stimulus kiểm tra.

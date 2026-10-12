@@ -45,8 +45,8 @@ Tasks 0, 2, 6, 8, 10 are full-screen instruction screens, not test stimuli.
 ## 2. Features (72)
 
 72 features are computed per (participant, task) from the clean fixations
-(see `EDA/features_dictionary.md` for formulas and units; Vietnamese version:
-`EDA/features_dictionary_vi.md`). Groups by prefix:
+(see `docs/baseline/eda_summary.md` for the cleaning pipeline, formulas and units;
+Vietnamese version: `docs/baseline/eda_summary_vi.md`). Groups by prefix:
 
 | Prefix | n | Meaning |
 |---|---|---|
@@ -137,8 +137,8 @@ Full list:
 
 ## 3. Selected features (25)
 
-Screening from `EDA/group_comparison_stats_per_task.csv`: features with
-Kruskal–Wallis p < 0.1 (uncorrected) in **at least 3 of the 11 tasks**.
+Screening from `processed_dataset/group_comparison_stats_per_task.csv`:
+features with Kruskal–Wallis p < 0.1 (uncorrected) in **at least 3 of the 11 tasks**.
 Exploratory only — 792 tests were run, so multiple testing is expected.
 
 | Feature | n_tasks (p<0.1) | Tasks |
@@ -175,8 +175,9 @@ Among these, **8 features** are significant (p < 0.1) in all three King–Devick
 cards (tasks 3, 4, 5): `spa_fix_count`, `geo_sacc_amp_mean`, `geo_revisit_rate`, `geo_nn_dist_mean`, `pup_mean`, `pup_median`, `sac_count`, `sac_dur_total`.
 
 - Full statistics (H, p, q_bh, group means) for all 72 features × 11 tasks:
-  `EDA/comparison_summary.md` (Vietnamese: `EDA/comparison_summary_vi.md`).
-- Dataset restricted to the 25 selected features: `processed_dataset_v2/`.
+  `docs/baseline/eda_summary.md` (Vietnamese: `docs/baseline/eda_summary_vi.md`).
+- Final working feature set (25 features): `finalized_dataset/` — used by all
+  experiments going forward.
 
 ## 4. Extended selection (39 features, p < 0.2)
 
@@ -235,18 +236,19 @@ this list is only a broad candidate set.
 | Path | Content |
 |---|---|
 | `dataset/`, `dataset_v2/` | raw eye-tracker exports (2025-03-05) |
-| `processed_dataset/` | features (72) + metadata for 157 participants |
-| `processed_dataset_v2/` | subset with the 25 selected features |
+| `processed_dataset/` | features (72) + metadata for 157 participants + screening stats |
+| `finalized_dataset/` | final working feature set (25 selected features) |
 | `processed_dataset_v3/` | subset with the 39 features (p < 0.2 in ≥ 3 tasks) |
-| `EDA/` | notebooks, feature dictionary, group-comparison summary |
-| `report/` | reports |
-| `src/begad_norm/` | feature-extraction code and config |
+| `fold/` | participant-level 4-fold assignment (CSV) |
+| `docs/baseline/` | project documentation (EN + VI): EDA summary, fold split, baseline comparison, finalized-dataset baseline |
+| `outputs/` | experiment outputs (baseline results, provenance, run log) |
+| `src/begad_norm/` | feature-extraction code, config, and baseline experiments |
 | `tests/` | unit tests (config, raw data, features) |
 
 ## Notes
 
 - The p-values used for screening are uncorrected Kruskal–Wallis p-values;
   `q_bh` (Benjamini–Hochberg over all 792 tests) is available in
-  `EDA/comparison_summary.md`.
+  `docs/baseline/eda_summary.md`.
 - Feature values on instruction-screen tasks (0, 2, 6, 8, 10) describe
   instruction viewing, not the test stimuli.

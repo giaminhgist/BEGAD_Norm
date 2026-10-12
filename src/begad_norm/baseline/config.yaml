@@ -1,0 +1,90 @@
+# Baseline experiment — BEGAD group classification, participant-wide input
+# One sample per participant: 25 finalized features x 11 tasks flattened to
+# wide columns (feature-major layout, names `{feature}_t{task}`) = 275 columns.
+# The finalized_dataset is the working feature set for all experiments going
+# forward (see docs/baseline/baseline_dataset_comparison.md).
+# Reproducibility: every input below is fixed; results are deterministic given
+# the recorded data files, code, and environment (see outputs/baseline/provenance.json).
+
+experiment:
+  name: baseline
+  description: >-
+    Baseline classifiers on participant-wide finalized features (25 x 11 tasks,
+    feature-major). 1 dataset x 3 problems x 6 models x 20 seeds x 4-fold
+    participant-level CV = 1440 train/test evaluations.
+
+data:
+  # Feature sets; the feature list of each dataset is read from its
+  # features.csv columns (participant_id, task excluded).
+  datasets:
+    - name: finalized25
+      label: Final 25 features (p < 0.1 in >= 3 tasks)
+      features_csv: finalized_dataset/features.csv
+      metadata_csv: finalized_dataset/metadata.csv
+  sample_mode: participant_wide        # one row per participant, features x 11 tasks
+  n_tasks: 11
+  wide_layout: feature-major           # columns ordered {feature}_t{task}, task 0..10
+  imputation: median_per_fold          # median imputation, fitted on the training split of each fold
+
+problems:
+  - name: co_vs_mci
+    include_groups: [CO, MCI]   # positive class = MCI
+    positive: MCI
+  - name: co_vs_ad
+    include_groups: [CO, AD]    # positive class = AD
+    positive: AD
+  - name: co_mci_ad
+    include_groups: [CO, MCI, AD]  # 3-class
+    positive: null
+
+cv:
+  n_folds: 4
+  seeds: [42, 2026, 1, 0, 7, 123, 1234, 2024, 2025, 1337, 2, 3, 5, 10, 21, 777, 2020, 2021, 2022, 2023]
+  # 20 common seeds, fixed BEFORE results were seen; first 10 = the original
+  # comparison-run seeds, last 10 = the extension.
+  unit: participant                          # one sample per participant
+  stratify_by: group
+
+models:
+  logistic_regression:
+    class: LogisticRegression
+    kwargs: {max_iter: 2000}
+  svm_rbf:
+    class: SVC
+    kwargs: {C: 1.0, kernel: rbf, gamma: scale, probability: true}
+  svm_linear:
+    class: SVC
+    kwargs: {C: 1.0, kernel: linear, probability: true}
+  fnn:
+    class: MLPClassifier
+    kwargs:
+      hidden_layer_sizes: [64, 32]
+      activation: relu
+      solver: adam
+      alpha: 0.0001
+      batch_size: 32
+      learning_rate_init: 0.001
+      max_iter: 300
+  qda:
+    class: QuadraticDiscriminantAnalysis
+    # p > n per class for the wide layout: svd solver is infeasible; eigen
+    # solver + shrinkage (smoke run showed svd raises LinAlgError)
+    kwargs: {solver: eigen, shrinkage: 0.5}
+  gnb:
+    class: GaussianNB
+    kwargs: {var_smoothing: 1.0e-09}
+
+metrics:
+  - acc
+  - sen    # binary: recall of positive class; 3-class: macro recall
+  - spec   # binary: TN/(TN+FP) of negative class; 3-class: macro per-class specificity
+  - auc    # binary: ROC-AUC of positive; 3-class: OVR macro AUC (predict_proba)
+  - f1     # binary: F1 of positive; 3-class: macro F1
+
+output:
+  dir: outputs/baseline
+  detail_csv: results/results_detail.csv
+  summary_csv: results/summary.csv
+  run_log_csv: run_log.csv
+  smoke_csv: results/smoke_detail.csv
+  missingness_csv: results/missingness.csv

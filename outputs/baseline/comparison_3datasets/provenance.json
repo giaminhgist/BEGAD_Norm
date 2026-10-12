@@ -1,0 +1,25 @@
+{
+  "timestamp_utc": "2026-10-12T20:32:20+00:00",
+  "host": "pspmld7lz02t",
+  "python": "3.12.15",
+  "command": "/home/paperspace/BEGAD_Norm/src/begad_norm/baseline/run_baselines.py --config src/begad_norm/baseline/config.yaml",
+  "git_commit": "afe04a047476a3a35f5987eceb686202c2931464",
+  "git_dirty": true,
+  "config_sha256": "3cb10f8d171c44391dbe7291bf1f15d884adc67fbd5aaadf6217b7c977d96239",
+  "data_sha256": {
+    "all72_features": "3b5ad9d8322b2dd080d0f433bf91a3b60cb077402415d0b21900073a55c304ea",
+    "selected25_features": "0c27849c7b126d70ac5498007724926f87f131f5e0d69d949666bc3037e2139b",
+    "extended39_features": "a4eca9eb4b9cb32a8c8f67b7ec9939f7b376ad1f62c32463babbc1e66967fcf7",
+    "all72_metadata": "e1616da8bfe6b4bcf284c062d902b7578f6c39510d74383300be65fe67a66001",
+    "selected25_metadata": "e1616da8bfe6b4bcf284c062d902b7578f6c39510d74383300be65fe67a66001",
+    "extended39_metadata": "e1616da8bfe6b4bcf284c062d902b7578f6c39510d74383300be65fe67a66001"
+  },
+  "packages": {
+    "numpy": "2.5.4",
+    "pandas": "3.0.6",
+    "scikit-learn": "1.9.1",
+    "scipy": "1.18.1",
+    "PyYAML": "6.0.3"
+  },
+  "n_rows": 2160
+}
