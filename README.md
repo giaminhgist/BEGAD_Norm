@@ -42,107 +42,59 @@ The King–Devick / reading interpretation follows the protocol notebook
 "reading task") and the stimulus file names ("lukeminen" = reading in Finnish).
 Tasks 0, 2, 6, 8, 10 are full-screen instruction screens, not test stimuli.
 
-## 2. Features (72)
+## 2. Features (25)
 
-72 features are computed per (participant, task) from the clean fixations
+25 features are computed per (participant, task) from the clean fixations
 (see `docs/baseline/eda_summary.md` for the cleaning pipeline, formulas and units;
 Vietnamese version: `docs/baseline/eda_summary_vi.md`). Groups by prefix:
 
 | Prefix | n | Meaning |
 |---|---|---|
-| `spa_` | 17 | spatial position & dispersion |
-| `geo_` | 10 | scanpath geometry |
-| `tem_` | 11 | temporal dynamics |
-| `pup_` | 7 | pupil size |
-| `pupbl_` | 7 | pupil baseline |
-| `pupdiff_` | 7 | pupil difference |
-| `sac_` | 13 | measured saccades |
+| `spa_` | 4 | spatial position & dispersion |
+| `geo_` | 4 | scanpath geometry |
+| `tem_` | 2 | temporal dynamics |
+| `pup_` | 6 | pupil size |
+| `pupbl_` | 2 | pupil baseline |
+| `sac_` | 7 | measured saccades |
 
 Full list:
 
 | Group | Feature |
 |---|---|
 | spa — spatial position & dispersion | `spa_fix_count` |
-| spa — spatial position & dispersion | `spa_mean_x` |
-| spa — spatial position & dispersion | `spa_mean_y` |
-| spa — spatial position & dispersion | `spa_std_x` |
-| spa — spatial position & dispersion | `spa_std_y` |
 | spa — spatial position & dispersion | `spa_dispersion` |
-| spa — spatial position & dispersion | `spa_bbox_area` |
-| spa — spatial position & dispersion | `spa_center_dist_mean` |
 | spa — spatial position & dispersion | `spa_center_dist_std` |
-| spa — spatial position & dispersion | `spa_center_frac` |
-| spa — spatial position & dispersion | `spa_q1` |
 | spa — spatial position & dispersion | `spa_q2` |
-| spa — spatial position & dispersion | `spa_q3` |
-| spa — spatial position & dispersion | `spa_q4` |
-| spa — spatial position & dispersion | `spa_entropy` |
-| spa — spatial position & dispersion | `spa_max_grid_frac` |
-| spa — spatial position & dispersion | `spa_skew_x` |
 | geo — scanpath geometry | `geo_scanpath_len` |
 | geo — scanpath geometry | `geo_sacc_amp_mean` |
-| geo — scanpath geometry | `geo_sacc_amp_std` |
-| geo — scanpath geometry | `geo_sacc_amp_max` |
-| geo — scanpath geometry | `geo_dx_mean` |
-| geo — scanpath geometry | `geo_dy_mean` |
-| geo — scanpath geometry | `geo_angle_var` |
 | geo — scanpath geometry | `geo_revisit_rate` |
 | geo — scanpath geometry | `geo_nn_dist_mean` |
-| geo — scanpath geometry | `geo_hull_area` |
-| tem — temporal dynamics | `tem_dur_mean` |
-| tem — temporal dynamics | `tem_dur_std` |
 | tem — temporal dynamics | `tem_dur_total` |
-| tem — temporal dynamics | `tem_dur_max` |
-| tem — temporal dynamics | `tem_first_dur` |
-| tem — temporal dynamics | `tem_last_dur` |
-| tem — temporal dynamics | `tem_ifi_mean` |
-| tem — temporal dynamics | `tem_ifi_std` |
 | tem — temporal dynamics | `tem_velocity_mean` |
-| tem — temporal dynamics | `tem_fix_rate` |
-| tem — temporal dynamics | `tem_trans_entropy` |
 | pup — pupil size | `pup_mean` |
 | pup — pupil size | `pup_std` |
 | pup — pupil size | `pup_min` |
 | pup — pupil size | `pup_max` |
 | pup — pupil size | `pup_median` |
 | pup — pupil size | `pup_slope` |
-| pup — pupil size | `pup_first_last_diff` |
-| pupbl — pupil baseline | `pupbl_mean` |
 | pupbl — pupil baseline | `pupbl_std` |
-| pupbl — pupil baseline | `pupbl_min` |
-| pupbl — pupil baseline | `pupbl_max` |
-| pupbl — pupil baseline | `pupbl_median` |
 | pupbl — pupil baseline | `pupbl_slope` |
-| pupbl — pupil baseline | `pupbl_first_last_diff` |
-| pupdiff — pupil difference | `pupdiff_mean` |
-| pupdiff — pupil difference | `pupdiff_std` |
-| pupdiff — pupil difference | `pupdiff_min` |
-| pupdiff — pupil difference | `pupdiff_max` |
-| pupdiff — pupil difference | `pupdiff_median` |
-| pupdiff — pupil difference | `pupdiff_slope` |
-| pupdiff — pupil difference | `pupdiff_first_last_diff` |
 | sac — measured saccades | `sac_count` |
-| sac — measured saccades | `sac_rate` |
 | sac — measured saccades | `sac_dur_mean` |
-| sac — measured saccades | `sac_dur_std` |
 | sac — measured saccades | `sac_dur_total` |
 | sac — measured saccades | `sac_dur_max` |
 | sac — measured saccades | `sac_amp_mean` |
 | sac — measured saccades | `sac_amp_std` |
-| sac — measured saccades | `sac_amp_max` |
-| sac — measured saccades | `sac_absdir_mean` |
-| sac — measured saccades | `sac_absdir_var` |
-| sac — measured saccades | `sac_turn_mean` |
 | sac — measured saccades | `sac_turn_std` |
 
-## 3. Selected features (25)
+## 3. Feature selection
 
-Screening from `processed_dataset/group_comparison_stats_per_task.csv`:
-features with Kruskal–Wallis p < 0.1 (uncorrected) in **at least 3 of the 11 tasks**.
-Exploratory only — 792 tests were run, so multiple testing is expected.
+The 25 features were screened from the extracted feature pool with
+Kruskal–Wallis tests per (feature, task): features with p < 0.1 (uncorrected)
+in **at least 3 of the 11 tasks** were retained. Screening was exploratory and
+multiple testing was not corrected at the selection stage. Evidence:
+`processed_dataset/selection.csv`.
 
-| Feature | n_tasks (p<0.1) | Tasks |
-|---|---|---|
 | Feature | n_tasks (p<0.1) | Tasks |
 |---|---|---|
 | `spa_fix_count` | 7 | 0, 2, 3, 4, 5, 6, 7 |
@@ -174,73 +126,28 @@ Exploratory only — 792 tests were run, so multiple testing is expected.
 Among these, **8 features** are significant (p < 0.1) in all three King–Devick
 cards (tasks 3, 4, 5): `spa_fix_count`, `geo_sacc_amp_mean`, `geo_revisit_rate`, `geo_nn_dist_mean`, `pup_mean`, `pup_median`, `sac_count`, `sac_dur_total`.
 
-- Full statistics (H, p, q_bh, group means) for all 72 features × 11 tasks:
-  `docs/baseline/eda_summary.md` (Vietnamese: `docs/baseline/eda_summary_vi.md`).
-- Final working feature set (25 features): `finalized_dataset/` — used by all
-  experiments going forward.
+## 4. Baseline experiments
 
-## 4. Extended selection (39 features, p < 0.2)
+Classical baselines (logistic regression, SVM RBF/linear, FNN, QDA, GNB) on
+one sample per participant (25 features × 11 tasks = 275 columns), 5-fold
+participant-level CV × 20 seeds, with class-imbalance handling (balanced
+class weights / inverse-frequency priors, fixed 0.5 decision threshold):
 
-A looser screening threshold: features with Kruskal–Wallis p < 0.2
-(uncorrected) in **at least 3 of the 11 tasks**. The 25 features from
-Section 3 are a subset of these 39. Statistical caveat: with 792 tests, ~28 of
-72 features would meet this criterion by chance alone under the global null, so
-this list is only a broad candidate set.
-
-| Feature | n_tasks (p<0.2) | Tasks |
-|---|---|---|
-| `pup_max` | 11 | 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 |
-| `pup_mean` | 11 | 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 |
-| `pup_median` | 11 | 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 |
-| `pup_min` | 10 | 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 |
-| `sac_dur_total` | 9 | 0, 1, 2, 3, 4, 5, 6, 7, 10 |
-| `geo_nn_dist_mean` | 8 | 0, 1, 2, 3, 4, 5, 6, 9 |
-| `sac_amp_mean` | 8 | 3, 4, 5, 6, 7, 8, 9, 10 |
-| `sac_count` | 7 | 0, 2, 3, 4, 5, 6, 7 |
-| `sac_dur_std` | 7 | 0, 1, 2, 6, 7, 9, 10 |
-| `sac_turn_std` | 7 | 0, 3, 4, 6, 7, 8, 9 |
-| `spa_fix_count` | 7 | 0, 2, 3, 4, 5, 6, 7 |
-| `geo_revisit_rate` | 6 | 0, 1, 2, 3, 4, 5 |
-| `geo_sacc_amp_mean` | 6 | 3, 4, 5, 6, 7, 8 |
-| `geo_scanpath_len` | 6 | 0, 2, 4, 5, 6, 9 |
-| `sac_dur_max` | 6 | 0, 2, 6, 7, 8, 10 |
-| `sac_dur_mean` | 6 | 1, 2, 3, 4, 9, 10 |
-| `spa_center_dist_std` | 6 | 0, 1, 2, 4, 6, 9 |
-| `tem_dur_total` | 6 | 0, 2, 4, 5, 6, 10 |
-| `pup_std` | 5 | 1, 2, 7, 9, 10 |
-| `pupdiff_std` | 5 | 1, 7, 8, 9, 10 |
-| `sac_amp_std` | 5 | 3, 5, 7, 9, 10 |
-| `spa_q2` | 5 | 0, 3, 4, 5, 10 |
-| `spa_skew_x` | 5 | 0, 6, 7, 8, 9 |
-| `geo_sacc_amp_max` | 4 | 0, 5, 6, 9 |
-| `pupbl_slope` | 4 | 1, 2, 7, 10 |
-| `pupbl_std` | 4 | 1, 2, 9, 10 |
-| `pupdiff_slope` | 4 | 2, 4, 7, 9 |
-| `sac_absdir_var` | 4 | 1, 2, 3, 6 |
-| `spa_bbox_area` | 4 | 0, 3, 4, 6 |
-| `spa_dispersion` | 4 | 3, 6, 8, 9 |
-| `geo_angle_var` | 3 | 1, 3, 5 |
-| `pup_first_last_diff` | 3 | 1, 2, 10 |
-| `pup_slope` | 3 | 1, 2, 10 |
-| `pupbl_first_last_diff` | 3 | 1, 2, 10 |
-| `pupbl_max` | 3 | 1, 7, 8 |
-| `spa_center_frac` | 3 | 1, 3, 9 |
-| `spa_std_x` | 3 | 3, 6, 8 |
-| `tem_dur_max` | 3 | 5, 8, 10 |
-| `tem_velocity_mean` | 3 | 3, 5, 8 |
-
-- Dataset restricted to these 39 features: `processed_dataset_v3/`.
+- Protocol and results: `docs/baseline/baseline_balanced.md`
+  (Vietnamese: `docs/baseline/baseline_balanced_vi.md`).
+- Machine-readable outputs: `outputs/baseline_balanced/` (results,
+  missingness, provenance, run log).
+- Re-run: `uv run python -m begad_norm.baseline.run_baselines --config src/begad_norm/baseline/config.yaml`.
 
 ## Repository layout
 
 | Path | Content |
 |---|---|
 | `dataset/`, `dataset_v2/` | raw eye-tracker exports (2025-03-05) |
-| `processed_dataset/` | features (72) + metadata for 157 participants + screening stats |
-| `finalized_dataset/` | final working feature set (25 selected features) |
-| `processed_dataset_v3/` | subset with the 39 features (p < 0.2 in ≥ 3 tasks) |
-| `fold/` | participant-level 4-fold assignment (CSV) |
-| `docs/baseline/` | project documentation (EN + VI): EDA summary, fold split, baseline comparison, finalized-dataset baseline |
+| `processed_dataset/` | the processed dataset (25 features) + metadata for 157 participants + selection evidence |
+| `fold1/` | participant-level 5-fold assignment (CSV) |
+| `fold/` | earlier 4-fold reference split (CSV) |
+| `docs/baseline/` | project documentation (EN + VI): EDA summary, fold split, balanced baseline |
 | `outputs/` | experiment outputs (baseline results, provenance, run log) |
 | `src/begad_norm/` | feature-extraction code, config, and baseline experiments |
 | `tests/` | unit tests (config, raw data, features) |
@@ -248,7 +155,7 @@ this list is only a broad candidate set.
 ## Notes
 
 - The p-values used for screening are uncorrected Kruskal–Wallis p-values;
-  `q_bh` (Benjamini–Hochberg over all 792 tests) is available in
-  `docs/baseline/eda_summary.md`.
+  the 25 features were screened on the same cohort, so downstream CV
+  performance carries in-sample selection bias.
 - Feature values on instruction-screen tasks (0, 2, 6, 8, 10) describe
   instruction viewing, not the test stimuli.

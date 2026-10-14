@@ -152,7 +152,7 @@ class CleanFixationsTests(unittest.TestCase):
         self.assertEqual(
             list(out.columns),
             ["task", "ts", "dur", "x", "y", "pup", "pup_corrected", "pupdiff",
-             "amp", "absdir", "reldir"],
+             "pup_left", "pup_right", "amp", "absdir", "reldir"],
         )
         self.assertEqual(out["ts"].tolist(), [100.0, 300.0])
         # binocular mean pupil and baseline-corrected pupil

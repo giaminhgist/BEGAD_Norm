@@ -3,13 +3,17 @@
 Pipeline per roster participant file:
   read CSV -> parse decimal-comma columns -> clean fixations (Final & !HasNulls
   & fixation events, duration window, per-task media bounds, pupil outliers)
-  -> extract saccade runs -> compute features per (participant, task):
-    - the 45 EMS features (verbatim port) on MCSpx coordinates and binocular
-      mean pupil (screen geometry from config.TASK_GEOMETRY per task),
-    - pupbl_ (7): same formulas on baseline-corrected binocular pupil,
-    - pupdiff_ (7): same formulas on the raw L - R pupil difference,
-    - sac_ (13): measured-saccade features (amp/directions attached to
-      fixations + saccade-run durations).
+  -> extract saccade runs -> compute the 25 selected features per
+  (participant, task) (see SELECTED_FEATURE_NAMES; selection evidence in
+  processed_dataset/selection.csv):
+    - stimulus features from the EMS port (spatial, scanpath geometry,
+      temporal, pupil) on MCSpx coordinates and binocular mean pupil
+      (screen geometry from config.TASK_GEOMETRY per task),
+    - pupbl_std, pupbl_slope: the same formulas on baseline-corrected
+      binocular pupil,
+    - measured-saccade features (count, run durations, amplitudes, turn
+      angle; amplitudes/directions attached to fixations + saccade-run
+      durations).
 Pairs with < MIN_FIX clean fixations yield all-NaN rows (EMS convention).
 
 Outputs (processed_dataset/): features.csv, metadata.csv, feature_names.txt,
@@ -34,7 +38,7 @@ from begad_norm.config import (
     TASK_IDS,
 )
 from begad_norm.features.saccade import compute_saccade_features
-from begad_norm.features.stimulus import FEATURE_NAMES, compute_stimulus_features
+from begad_norm.features.stimulus import compute_stimulus_features
 from begad_norm.rawdata import (
     clean_fixations,
     extract_saccade_runs,
@@ -43,21 +47,31 @@ from begad_norm.rawdata import (
     read_participant_file,
 )
 
-PUPBL_NAMES = [n.replace("pup_", "pupbl_") for n in FEATURE_NAMES if n.startswith("pup_")]
-PUPDIFF_NAMES = [n.replace("pup_", "pupdiff_") for n in FEATURE_NAMES if n.startswith("pup_")]
-SAC_NAMES = [
-    "sac_count", "sac_rate", "sac_dur_mean", "sac_dur_std", "sac_dur_total",
-    "sac_dur_max", "sac_amp_mean", "sac_amp_std", "sac_amp_max",
-    "sac_absdir_mean", "sac_absdir_var", "sac_turn_mean", "sac_turn_std",
+# Final working feature set: Kruskal-Wallis p < 0.1 (uncorrected) in at least
+# 3 of the 11 tasks (see processed_dataset/selection.csv).
+SELECTED_FEATURE_NAMES = [
+    # spatial position & dispersion
+    "spa_fix_count", "spa_dispersion", "spa_center_dist_std", "spa_q2",
+    # scanpath geometry
+    "geo_scanpath_len", "geo_sacc_amp_mean", "geo_revisit_rate",
+    "geo_nn_dist_mean",
+    # temporal dynamics
+    "tem_dur_total", "tem_velocity_mean",
+    # pupil size (binocular mean)
+    "pup_mean", "pup_std", "pup_min", "pup_max", "pup_median", "pup_slope",
+    # baseline-corrected pupil
+    "pupbl_std", "pupbl_slope",
+    # measured saccades
+    "sac_count", "sac_dur_mean", "sac_dur_total", "sac_dur_max",
+    "sac_amp_mean", "sac_amp_std", "sac_turn_std",
 ]
-ALL_FEATURE_NAMES = FEATURE_NAMES + PUPBL_NAMES + PUPDIFF_NAMES + SAC_NAMES
-TABLE_COLUMNS = ["participant_id", "task"] + ALL_FEATURE_NAMES
+TABLE_COLUMNS = ["participant_id", "task"] + SELECTED_FEATURE_NAMES
 
 
 def features_for_pair(g: pd.DataFrame, runs: pd.DataFrame, w: float, h: float) -> dict:
-    """Compute all 72 features for one (participant, task) pair."""
+    """Compute the 25 selected features for one (participant, task) pair."""
     if len(g) < MIN_FIX:
-        return {name: np.nan for name in ALL_FEATURE_NAMES}
+        return {name: np.nan for name in SELECTED_FEATURE_NAMES}
 
     x, y = g["x"].to_numpy(), g["y"].to_numpy()
     dur = g["dur"].to_numpy()
@@ -65,19 +79,22 @@ def features_for_pair(g: pd.DataFrame, runs: pd.DataFrame, w: float, h: float) -
                                   screen_w=w, screen_h=h)
     fbl = compute_stimulus_features(x, y, dur, g["pup_corrected"].to_numpy(),
                                     screen_w=w, screen_h=h)
-    fdiff = compute_stimulus_features(x, y, dur, g["pupdiff"].to_numpy(),
-                                      screen_w=w, screen_h=h)
-    for name in PUPBL_NAMES:
-        f[name] = fbl[name.replace("pupbl_", "pup_")]
-    for name in PUPDIFF_NAMES:
-        f[name] = fdiff[name.replace("pupdiff_", "pup_")]
 
     total_time = dur.sum() + (f["tem_ifi_mean"] * (len(g) - 1) if len(g) > 1 else 0.0)
-    f.update(compute_saccade_features(
+    s = compute_saccade_features(
         g["amp"].to_numpy(), g["absdir"].to_numpy(), g["reldir"].to_numpy(),
         runs["run_dur"].to_numpy(), total_time,
-    ))
-    return f
+    )
+
+    feat = {}
+    for name in SELECTED_FEATURE_NAMES:
+        if name.startswith("pupbl_"):
+            feat[name] = fbl[name.replace("pupbl_", "pup_")]
+        elif name.startswith("sac_"):
+            feat[name] = s[name]
+        else:
+            feat[name] = f[name]
+    return feat
 
 
 def build_all(participants_subset=None):
@@ -142,14 +159,14 @@ def write_outputs(features, metadata, stats, out_dir: Path) -> None:
     features.to_csv(out_dir / "features.csv", index=False)
     metadata.to_csv(out_dir / "metadata.csv", index=False)
     (out_dir / "feature_names.txt").write_text(
-        "\n".join(ALL_FEATURE_NAMES) + "\n", encoding="utf-8")
+        "\n".join(SELECTED_FEATURE_NAMES) + "\n", encoding="utf-8")
 
     n_rows, n_feats = features.shape
-    nan_frac = features[ALL_FEATURE_NAMES].isna().mean()
-    all_nan_rows = features[features[ALL_FEATURE_NAMES].isna().all(axis=1)]
+    nan_frac = features[SELECTED_FEATURE_NAMES].isna().mean()
+    all_nan_rows = features[features[SELECTED_FEATURE_NAMES].isna().all(axis=1)]
     lines = [
         f"participants: {metadata['participant_id'].nunique()}",
-        f"rows: {n_rows} x {n_feats} ({len(ALL_FEATURE_NAMES)} features + 2 id cols)",
+        f"rows: {n_rows} x {n_feats} ({len(SELECTED_FEATURE_NAMES)} features + 2 id cols)",
         f"all-NaN rows: {len(all_nan_rows)}",
     ]
     if len(all_nan_rows):
@@ -187,7 +204,7 @@ def main(argv=None) -> int:
     t0 = time.time()
     features, metadata, stats = build_all(participants_subset=subset)
     write_outputs(features, metadata, stats, args.out_dir)
-    print(f"built {len(features)} rows x {len(ALL_FEATURE_NAMES)} features "
+    print(f"built {len(features)} rows x {len(SELECTED_FEATURE_NAMES)} features "
           f"for {len(metadata)} participants in {time.time() - t0:.1f}s "
           f"-> {args.out_dir}")
     return 0

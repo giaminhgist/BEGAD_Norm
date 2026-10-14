@@ -23,7 +23,7 @@ from begad_norm.config import (
 )
 
 CLEAN_COLUMNS = ["task", "ts", "dur", "x", "y", "pup", "pup_corrected", "pupdiff",
-                 "amp", "absdir", "reldir"]
+                 "pup_left", "pup_right", "amp", "absdir", "reldir"]
 
 
 def participant_id_from_filename(name: str) -> str:
@@ -99,6 +99,8 @@ def clean_fixations(df: pd.DataFrame, return_stats: bool = False):
             "GazeEventDuration": "dur",
             "FixationPointX (MCSpx)": "x",
             "FixationPointY (MCSpx)": "y",
+            "PupilLeft": "pup_left",
+            "PupilRight": "pup_right",
             "SaccadicAmplitude": "amp",
             "AbsoluteSaccadicDirection": "absdir",
             "RelativeSaccadicDirection": "reldir",

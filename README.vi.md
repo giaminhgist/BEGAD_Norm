@@ -43,109 +43,59 @@ là "reading task") và tên file stimulus ("lukeminen" = đọc trong tiếng P
 Lan). Tasks 0, 2, 6, 8, 10 là màn hình hướng dẫn toàn màn hình, không phải
 stimulus kiểm tra.
 
-## 2. Features (72)
+## 2. Features (25)
 
-72 feature được tính cho mỗi (người tham gia, task) từ các fixation sạch (xem
+25 feature được tính cho mỗi (người tham gia, task) từ các fixation sạch (xem
 `docs/baseline/eda_summary_vi.md` để biết quy trình làm sạch, công thức và đơn vị; bản
 tiếng Anh: `docs/baseline/eda_summary.md`). Phân nhóm theo tiền tố:
 
 | Tiền tố | n | Ý nghĩa |
 |---|---|---|
-| `spa_` | 17 | phân bố không gian của fixation |
-| `geo_` | 10 | hình học đường quét (scanpath) |
-| `tem_` | 11 | động học theo thời gian |
-| `pup_` | 7 | kích thước đồng tử |
-| `pupbl_` | 7 | đường nền đồng tử |
-| `pupdiff_` | 7 | chênh lệch đồng tử |
-| `sac_` | 13 | saccade đo được |
+| `spa_` | 4 | phân bố không gian của fixation |
+| `geo_` | 4 | hình học đường quét (scanpath) |
+| `tem_` | 2 | động học theo thời gian |
+| `pup_` | 6 | kích thước đồng tử |
+| `pupbl_` | 2 | đường nền đồng tử |
+| `sac_` | 7 | saccade đo được |
 
 Danh sách đầy đủ:
 
 | Nhóm | Feature |
 |---|---|
 | spa — phân bố không gian của fixation | `spa_fix_count` |
-| spa — phân bố không gian của fixation | `spa_mean_x` |
-| spa — phân bố không gian của fixation | `spa_mean_y` |
-| spa — phân bố không gian của fixation | `spa_std_x` |
-| spa — phân bố không gian của fixation | `spa_std_y` |
 | spa — phân bố không gian của fixation | `spa_dispersion` |
-| spa — phân bố không gian của fixation | `spa_bbox_area` |
-| spa — phân bố không gian của fixation | `spa_center_dist_mean` |
 | spa — phân bố không gian của fixation | `spa_center_dist_std` |
-| spa — phân bố không gian của fixation | `spa_center_frac` |
-| spa — phân bố không gian của fixation | `spa_q1` |
 | spa — phân bố không gian của fixation | `spa_q2` |
-| spa — phân bố không gian của fixation | `spa_q3` |
-| spa — phân bố không gian của fixation | `spa_q4` |
-| spa — phân bố không gian của fixation | `spa_entropy` |
-| spa — phân bố không gian của fixation | `spa_max_grid_frac` |
-| spa — phân bố không gian của fixation | `spa_skew_x` |
 | geo — hình học đường quét (scanpath) | `geo_scanpath_len` |
 | geo — hình học đường quét (scanpath) | `geo_sacc_amp_mean` |
-| geo — hình học đường quét (scanpath) | `geo_sacc_amp_std` |
-| geo — hình học đường quét (scanpath) | `geo_sacc_amp_max` |
-| geo — hình học đường quét (scanpath) | `geo_dx_mean` |
-| geo — hình học đường quét (scanpath) | `geo_dy_mean` |
-| geo — hình học đường quét (scanpath) | `geo_angle_var` |
 | geo — hình học đường quét (scanpath) | `geo_revisit_rate` |
 | geo — hình học đường quét (scanpath) | `geo_nn_dist_mean` |
-| geo — hình học đường quét (scanpath) | `geo_hull_area` |
-| tem — động học theo thời gian | `tem_dur_mean` |
-| tem — động học theo thời gian | `tem_dur_std` |
 | tem — động học theo thời gian | `tem_dur_total` |
-| tem — động học theo thời gian | `tem_dur_max` |
-| tem — động học theo thời gian | `tem_first_dur` |
-| tem — động học theo thời gian | `tem_last_dur` |
-| tem — động học theo thời gian | `tem_ifi_mean` |
-| tem — động học theo thời gian | `tem_ifi_std` |
 | tem — động học theo thời gian | `tem_velocity_mean` |
-| tem — động học theo thời gian | `tem_fix_rate` |
-| tem — động học theo thời gian | `tem_trans_entropy` |
 | pup — kích thước đồng tử | `pup_mean` |
 | pup — kích thước đồng tử | `pup_std` |
 | pup — kích thước đồng tử | `pup_min` |
 | pup — kích thước đồng tử | `pup_max` |
 | pup — kích thước đồng tử | `pup_median` |
 | pup — kích thước đồng tử | `pup_slope` |
-| pup — kích thước đồng tử | `pup_first_last_diff` |
-| pupbl — đường nền đồng tử | `pupbl_mean` |
 | pupbl — đường nền đồng tử | `pupbl_std` |
-| pupbl — đường nền đồng tử | `pupbl_min` |
-| pupbl — đường nền đồng tử | `pupbl_max` |
-| pupbl — đường nền đồng tử | `pupbl_median` |
 | pupbl — đường nền đồng tử | `pupbl_slope` |
-| pupbl — đường nền đồng tử | `pupbl_first_last_diff` |
-| pupdiff — chênh lệch đồng tử | `pupdiff_mean` |
-| pupdiff — chênh lệch đồng tử | `pupdiff_std` |
-| pupdiff — chênh lệch đồng tử | `pupdiff_min` |
-| pupdiff — chênh lệch đồng tử | `pupdiff_max` |
-| pupdiff — chênh lệch đồng tử | `pupdiff_median` |
-| pupdiff — chênh lệch đồng tử | `pupdiff_slope` |
-| pupdiff — chênh lệch đồng tử | `pupdiff_first_last_diff` |
 | sac — saccade đo được | `sac_count` |
-| sac — saccade đo được | `sac_rate` |
 | sac — saccade đo được | `sac_dur_mean` |
-| sac — saccade đo được | `sac_dur_std` |
 | sac — saccade đo được | `sac_dur_total` |
 | sac — saccade đo được | `sac_dur_max` |
 | sac — saccade đo được | `sac_amp_mean` |
 | sac — saccade đo được | `sac_amp_std` |
-| sac — saccade đo được | `sac_amp_max` |
-| sac — saccade đo được | `sac_absdir_mean` |
-| sac — saccade đo được | `sac_absdir_var` |
-| sac — saccade đo được | `sac_turn_mean` |
 | sac — saccade đo được | `sac_turn_std` |
 
-## 3. Các feature được chọn (25)
+## 3. Chọn lọc feature
 
-Sàng lọc từ `processed_dataset/group_comparison_stats_per_task.csv`: các
-feature có p-value Kruskal–Wallis < 0.1 (chưa hiệu chỉnh) ở **ít nhất 3 trong
-11 tasks**. Chỉ mang
-tính thăm dò — tổng cộng 792 kiểm định đã chạy, vì vậy đa kiểm định là điều
-được dự kiến.
+25 feature được sàng lọc từ tập feature đã trích xuất bằng kiểm định
+Kruskal–Wallis cho từng (feature, task): giữ lại các feature có p < 0.1 (chưa
+hiệu chỉnh) ở **ít nhất 3 trong 11 tasks**. Việc sàng lọc chỉ mang tính thăm dò
+và không hiệu chỉnh đa kiểm định ở bước chọn lọc. Bằng chứng:
+`processed_dataset/selection.csv`.
 
-| Feature | n_tasks (p<0.1) | Tasks |
-|---|---|---|
 | Feature | n_tasks (p<0.1) | Tasks |
 |---|---|---|
 | `spa_fix_count` | 7 | 0, 2, 3, 4, 5, 6, 7 |
@@ -177,81 +127,37 @@ tính thăm dò — tổng cộng 792 kiểm định đã chạy, vì vậy đa 
 Trong số đó, **8 features** có p < 0.1 ở cả ba thẻ King–Devick (tasks 3, 4, 5):
 `spa_fix_count`, `geo_sacc_amp_mean`, `geo_revisit_rate`, `geo_nn_dist_mean`, `pup_mean`, `pup_median`, `sac_count`, `sac_dur_total`.
 
-- Thống kê đầy đủ (H, p, q_bh, trung bình theo nhóm) cho 72 features × 11
-  tasks: `docs/baseline/eda_summary_vi.md` (tiếng Anh: `docs/baseline/eda_summary.md`).
-- Bộ feature chính thức (25 feature): `finalized_dataset/` — dùng cho mọi thí
-  nghiệm từ nay về sau.
+## 4. Thí nghiệm baseline
 
-## 4. Danh sách mở rộng (39 features, p < 0.2)
+Các mô hình baseline cổ điển (logistic regression, SVM RBF/linear, FNN, QDA,
+GNB) trên một mẫu mỗi người tham gia (25 feature × 11 tasks = 275 cột), CV
+5-fold mức người tham gia × 20 seeds, có xử lý mất cân bằng lớp (class
+weight cân bằng / prior nghịch đảo tần suất, ngưỡng quyết định cố định
+0.5):
 
-Ngưỡng sàng lọc lỏng hơn: các feature có p-value Kruskal–Wallis < 0.2 (chưa
-hiệu chỉnh) ở **ít nhất 3 trong 11 tasks**. 25 feature ở Mục 3 là tập con của
-39 feature này. Lưu ý thống kê: với 792 kiểm định, nếu không có khác biệt thật
-nào thì ngẫu nhiên cũng cho ~28/72 features đạt tiêu chí này, vì vậy danh sách
-chỉ nên dùng làm tập ứng viên sàng lọc rộng.
-
-| Feature | Số tasks (p<0.2) | Tasks |
-|---|---|---|
-| `pup_max` | 11 | 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 |
-| `pup_mean` | 11 | 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 |
-| `pup_median` | 11 | 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 |
-| `pup_min` | 10 | 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 |
-| `sac_dur_total` | 9 | 0, 1, 2, 3, 4, 5, 6, 7, 10 |
-| `geo_nn_dist_mean` | 8 | 0, 1, 2, 3, 4, 5, 6, 9 |
-| `sac_amp_mean` | 8 | 3, 4, 5, 6, 7, 8, 9, 10 |
-| `sac_count` | 7 | 0, 2, 3, 4, 5, 6, 7 |
-| `sac_dur_std` | 7 | 0, 1, 2, 6, 7, 9, 10 |
-| `sac_turn_std` | 7 | 0, 3, 4, 6, 7, 8, 9 |
-| `spa_fix_count` | 7 | 0, 2, 3, 4, 5, 6, 7 |
-| `geo_revisit_rate` | 6 | 0, 1, 2, 3, 4, 5 |
-| `geo_sacc_amp_mean` | 6 | 3, 4, 5, 6, 7, 8 |
-| `geo_scanpath_len` | 6 | 0, 2, 4, 5, 6, 9 |
-| `sac_dur_max` | 6 | 0, 2, 6, 7, 8, 10 |
-| `sac_dur_mean` | 6 | 1, 2, 3, 4, 9, 10 |
-| `spa_center_dist_std` | 6 | 0, 1, 2, 4, 6, 9 |
-| `tem_dur_total` | 6 | 0, 2, 4, 5, 6, 10 |
-| `pup_std` | 5 | 1, 2, 7, 9, 10 |
-| `pupdiff_std` | 5 | 1, 7, 8, 9, 10 |
-| `sac_amp_std` | 5 | 3, 5, 7, 9, 10 |
-| `spa_q2` | 5 | 0, 3, 4, 5, 10 |
-| `spa_skew_x` | 5 | 0, 6, 7, 8, 9 |
-| `geo_sacc_amp_max` | 4 | 0, 5, 6, 9 |
-| `pupbl_slope` | 4 | 1, 2, 7, 10 |
-| `pupbl_std` | 4 | 1, 2, 9, 10 |
-| `pupdiff_slope` | 4 | 2, 4, 7, 9 |
-| `sac_absdir_var` | 4 | 1, 2, 3, 6 |
-| `spa_bbox_area` | 4 | 0, 3, 4, 6 |
-| `spa_dispersion` | 4 | 3, 6, 8, 9 |
-| `geo_angle_var` | 3 | 1, 3, 5 |
-| `pup_first_last_diff` | 3 | 1, 2, 10 |
-| `pup_slope` | 3 | 1, 2, 10 |
-| `pupbl_first_last_diff` | 3 | 1, 2, 10 |
-| `pupbl_max` | 3 | 1, 7, 8 |
-| `spa_center_frac` | 3 | 1, 3, 9 |
-| `spa_std_x` | 3 | 3, 6, 8 |
-| `tem_dur_max` | 3 | 5, 8, 10 |
-| `tem_velocity_mean` | 3 | 3, 5, 8 |
-
-- Dữ liệu chỉ gồm 39 feature này: `processed_dataset_v3/`.
+- Protocol và kết quả: `docs/baseline/baseline_balanced_vi.md`
+  (tiếng Anh: `docs/baseline/baseline_balanced.md`).
+- Đầu ra dạng máy đọc: `outputs/baseline_balanced/` (kết quả, missingness,
+  provenance, nhật ký chạy).
+- Chạy lại: `uv run python -m begad_norm.baseline.run_baselines --config src/begad_norm/baseline/config.yaml`.
 
 ## Cấu trúc repository
 
 | Đường dẫn | Nội dung |
 |---|---|
 | `dataset/`, `dataset_v2/` | file raw xuất từ eye-tracker (2025-03-05) |
-| `processed_dataset/` | features (72) + metadata của 157 người tham gia + thống kê sàng lọc |
-| `finalized_dataset/` | bộ feature chính thức (25 feature được chọn) |
-| `processed_dataset_v3/` | tập con 39 feature (p < 0.2 ở ≥ 3 tasks) |
-| `fold/` | phân fold 4-fold mức người tham gia (CSV) |
-| `docs/baseline/` | tài liệu dự án (EN + VI): tổng hợp EDA, chia fold, so sánh baseline, baseline bộ dataset chính thức |
+| `processed_dataset/` | dữ liệu đã xử lý (25 feature) + metadata của 157 người tham gia + bằng chứng chọn lọc |
+| `fold1/` | phân fold 5-fold mức người tham gia (CSV) |
+| `fold/` | split tham chiếu 4-fold cũ (CSV) |
+| `docs/baseline/` | tài liệu dự án (EN + VI): tổng hợp EDA, chia fold, baseline cân bằng |
 | `outputs/` | kết quả thí nghiệm (baseline, provenance, nhật ký chạy) |
 | `src/begad_norm/` | mã trích xuất feature, cấu hình và thí nghiệm baseline |
 | `tests/` | unit test (config, raw data, features) |
 
 ## Ghi chú
 
-- p-value dùng để sàng lọc là p-value Kruskal–Wallis chưa hiệu chỉnh; `q_bh`
-  (Benjamini–Hochberg trên toàn bộ 792 kiểm định) có sẵn trong
-  `docs/baseline/eda_summary_vi.md`.
+- p-value dùng để sàng lọc là p-value Kruskal–Wallis chưa hiệu chỉnh; 25
+  feature được sàng lọc trên chính cohort này, nên hiệu năng CV về sau mang
+  thiên lệch chọn lọc trong mẫu.
 - Giá trị feature trên các task màn hình hướng dẫn (0, 2, 6, 8, 10) mô tả việc
   đọc hướng dẫn, không phải stimulus kiểm tra.

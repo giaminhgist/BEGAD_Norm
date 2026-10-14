@@ -1,26 +1,27 @@
 """BEGAD baseline classifiers — runs every (dataset, problem, model, seed,
 fold) evaluation defined in config.yaml and writes one row per evaluation to
-the detail CSV with Acc / Sen / Spec / AUC / F1.
+the detail CSV with Acc / AUC / Sen / Spec / Precision / F1.
 
 Protocol (see config.yaml):
   - samples: one row per participant; each dataset's features x 11 tasks
-    flattened to wide columns, feature-major (25x11=275 for the finalized
+    flattened to wide columns, feature-major (25x11=275 for the processed
     dataset), median-imputed and standardized per fold on the training
     split only.
-  - CV: participant-level, stratified by group, 4 folds, 20 seeds
+  - CV: participant-level, stratified by group, 5 folds, 20 seeds
     (42, 2026, 1, 0, 7, 123, 1234, 2024, 2025, 1337, 2, 3, 5, 10, 21, 777,
-    2020, 2021, 2022, 2023) -> 80 train/test evaluations per
+    2020, 2021, 2022, 2023) -> 100 train/test evaluations per
     (dataset, problem, model).
-  - datasets: finalized25 (25 features); the feature list of each dataset is
-    read from its features.csv columns.
+  - datasets: processed_dataset (25 features); the feature list of each
+    dataset is read from its features.csv columns.
   - problems: co_vs_mci (MCI positive), co_vs_ad (AD positive),
-    co_mci_ad (3-class: CO=0, MCI=1, AD=2).
+    co_mci_ad (3-class: CO=0, MCI=1, AD=2; Sen/Precision/Spec/F1 are macro
+    averages, AUC is macro OVR).
 
 Usage:
     python -m begad_norm.baseline.run_baselines --config src/begad_norm/baseline/config.yaml --smoke
     python -m begad_norm.baseline.run_baselines --config src/begad_norm/baseline/config.yaml
     python -m begad_norm.baseline.run_baselines --config src/begad_norm/baseline/config.yaml \
-        --datasets selected25 --problems co_vs_mci --models gnb --seeds 1,2 --folds 1
+        --datasets processed_dataset --problems co_vs_mci --models gnb --seeds 1,2 --folds 1
 
 Reproducibility: config + seeds + data-file hashes + environment versions are
 written to outputs/baseline/provenance.json.
@@ -46,7 +47,7 @@ from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import (accuracy_score, confusion_matrix, f1_score,
-                             recall_score, roc_auc_score)
+                             precision_score, recall_score, roc_auc_score)
 from sklearn.naive_bayes import GaussianNB
 from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import StandardScaler
@@ -62,7 +63,7 @@ MODELS = {
     "GaussianNB": GaussianNB,
 }
 RANDOM_STATE_MODELS = {"logistic_regression", "svm_rbf", "svm_linear", "fnn"}
-METRIC_COLS = ["acc", "sen", "spec", "auc", "f1"]
+METRIC_COLS = ["acc", "sen", "precision", "spec", "auc", "f1"]
 DETAIL_COLS = ["dataset", "problem", "model", "seed", "fold", "n_train",
                "n_test"] + METRIC_COLS
 LABEL_MAP = {"CO": 0, "MCI": 1, "AD": 2}
@@ -135,13 +136,17 @@ def metrics_binary(y, pred, proba):
     return {
         "acc": accuracy_score(y, pred),
         "sen": recall_score(y, pred, pos_label=1),
+        "precision": precision_score(y, pred, pos_label=1, zero_division=0.0),
         "spec": (tn / (tn + fp)) if (tn + fp) > 0 else 0.0,
         "auc": roc_auc_score(y, proba[:, 1]),
-        "f1": f1_score(y, pred, pos_label=1),
+        "f1": f1_score(y, pred, pos_label=1, zero_division=0.0),
     }
 
 
 def metrics_multiclass(y, pred, proba):
+    """3-class CO/MCI/AD: Sen / Precision / Spec / F1 are macro averages
+    over the three classes (Spec = mean per-class TN/(TN+FP)), AUC is the
+    one-vs-rest macro AUC, Acc is the overall 3-class accuracy."""
     cm = confusion_matrix(y, pred)
     specs = []
     for c in range(cm.shape[0]):
@@ -150,19 +155,52 @@ def metrics_multiclass(y, pred, proba):
         specs.append((tn / (tn + fp)) if (tn + fp) > 0 else 0.0)
     return {
         "acc": accuracy_score(y, pred),
-        "sen": recall_score(y, pred, average="macro"),
+        "sen": recall_score(y, pred, average="macro", zero_division=0.0),
+        "precision": precision_score(y, pred, average="macro", zero_division=0.0),
         "spec": float(np.mean(specs)),
         "auc": roc_auc_score(y, proba, multi_class="ovr", average="macro"),
-        "f1": f1_score(y, pred, average="macro"),
+        "f1": f1_score(y, pred, average="macro", zero_division=0.0),
     }
 
 
-def make_model(name, spec, seed):
+def make_model(name, spec, seed, class_weight=None, priors=None):
+    """Build a model. With class_weight='balanced': LR/SVM get balanced
+    class weights; QDA/GNB get per-fold inverse-frequency priors (the
+    generative analogue), passed via `priors`. MLPClassifier has no
+    class_weight argument, so the FNN is weighted via sample_weight at
+    fit time instead (see evaluate)."""
     klass = MODELS[spec["class"]]
     kwargs = dict(spec["kwargs"])
     if name in RANDOM_STATE_MODELS:
         kwargs["random_state"] = seed
+    if class_weight == "balanced":
+        if name in ("logistic_regression", "svm_rbf", "svm_linear"):
+            kwargs["class_weight"] = "balanced"
+        elif name in ("qda", "gnb") and priors is not None:
+            kwargs["priors"] = priors
     return klass(**kwargs)
+
+
+def youden_threshold(proba_tr, y_tr):
+    """Binary threshold maximizing Youden's J (sen + spec - 1) on the
+    training split's predicted probabilities. In-sample (optimistic):
+    the threshold is selected on the same data the model was fitted on.
+    Sweeps the midpoints between consecutive unique probabilities; ties
+    keep the lowest threshold (highest sensitivity)."""
+    ps = np.sort(np.unique(proba_tr))
+    if len(ps) < 2:
+        return 0.5
+    best_thr, best_j = 0.5, -np.inf
+    for t in (ps[:-1] + ps[1:]) / 2.0:
+        pred = (proba_tr >= t).astype(int)
+        cm = confusion_matrix(y_tr, pred, labels=[0, 1])
+        tn, fp, fn, tp = cm.ravel()
+        sen = tp / (tp + fn) if (tp + fn) > 0 else 0.0
+        spec = tn / (tn + fp) if (tn + fp) > 0 else 0.0
+        j = sen + spec - 1.0
+        if j > best_j:
+            best_j, best_thr = j, float(t)
+    return best_thr
 
 
 def evaluate(cfg, dataset_name, X, y, pid, pid_group, problem, model_name,
@@ -170,19 +208,39 @@ def evaluate(cfg, dataset_name, X, y, pid, pid_group, problem, model_name,
     assign = stratified_folds(pid_group, seed, n_folds)
     test_mask = np.array([assign[str(p)] == fold for p in pid])
     train_mask = ~test_mask
+    y_tr = y[train_mask]
     # median imputation + scaling, both fitted on the training split only
     imputer = SimpleImputer(strategy="median")
     X_imp = imputer.fit_transform(X[train_mask])
     scaler = StandardScaler().fit(X_imp)
     X_tr = scaler.transform(X_imp)
     X_te = scaler.transform(imputer.transform(X[test_mask]))
-    model = make_model(model_name, cfg["models"][model_name], seed)
+
+    # class weighting: QDA/GNB priors and FNN sample weights from the
+    # training split only (LR/SVM get class_weight inside make_model)
+    priors = None
+    sample_weights = None
+    if cfg["data"].get("class_weight") == "balanced":
+        counts = np.bincount(y_tr, minlength=len(np.unique(y)))
+        if (counts > 0).all():
+            inv = 1.0 / counts
+            priors = inv / inv.sum()
+            w = len(y_tr) / (len(counts) * counts)
+            sample_weights = w[y_tr]
+    model = make_model(model_name, cfg["models"][model_name], seed,
+                       cfg["data"].get("class_weight"), priors)
     t0 = time.time()
-    model.fit(X_tr, y[train_mask])
+    if model_name == "fnn" and sample_weights is not None:
+        model.fit(X_tr, y_tr, sample_weight=sample_weights)
+    else:
+        model.fit(X_tr, y_tr)
     fit_s = time.time() - t0
     pred = model.predict(X_te)
     proba = model.predict_proba(X_te)
     if problem["positive"] is not None:
+        if cfg["data"].get("threshold") == "youden_train":
+            thr = youden_threshold(model.predict_proba(X_tr)[:, 1], y_tr)
+            pred = (proba[:, 1] >= thr).astype(int)
         m = metrics_binary(y[test_mask], pred, proba)
     else:
         m = metrics_multiclass(y[test_mask], pred, proba)

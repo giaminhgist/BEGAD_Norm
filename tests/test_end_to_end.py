@@ -14,9 +14,9 @@ from begad_norm.config import (
     TASK_GEOMETRY,
     TASK_IDS,
 )
-from begad_norm.scripts.build_features import ALL_FEATURE_NAMES, build_all
+from begad_norm.scripts.build_features import SELECTED_FEATURE_NAMES, build_all
 
-FEATURE_COLS = ["participant_id", "task"] + ALL_FEATURE_NAMES
+FEATURE_COLS = ["participant_id", "task"] + SELECTED_FEATURE_NAMES
 
 
 def reference_clean_fixations():
@@ -54,7 +54,7 @@ class EndToEndTests(unittest.TestCase):
         )
 
     def test_table_shape_and_columns(self):
-        self.assertEqual(self.features.shape, (11, 74))
+        self.assertEqual(self.features.shape, (11, 27))
         self.assertEqual(list(self.features.columns), FEATURE_COLS)
         self.assertEqual(set(self.features["task"]), set(TASK_IDS))
         self.assertTrue((self.features["participant_id"] == "BEG-201").all())
@@ -65,20 +65,21 @@ class EndToEndTests(unittest.TestCase):
         row = self.features[self.features["task"] == 1].iloc[0]
         n = len(g)
         self.assertAlmostEqual(row["spa_fix_count"], float(n))
-        self.assertAlmostEqual(row["spa_mean_x"], g["FixationPointX (MCSpx)"].mean())
-        self.assertAlmostEqual(row["spa_mean_y"], g["FixationPointY (MCSpx)"].mean())
-        self.assertAlmostEqual(row["tem_dur_mean"], g["GazeEventDuration"].mean())
-        d = g["GazeEventDuration"].to_numpy()  # numpy: positional, not index-aligned
-        half_gap = (d[:-1] + d[1:]) / 2.0
-        self.assertAlmostEqual(row["tem_ifi_mean"], half_gap.mean())
+        x = g["FixationPointX (MCSpx)"].to_numpy()
+        y = g["FixationPointY (MCSpx)"].to_numpy()
+        self.assertAlmostEqual(
+            row["spa_dispersion"],
+            np.sqrt((x - x.mean()) ** 2 + (y - y.mean()) ** 2).mean(),
+        )
+        dx, dy = np.diff(x), np.diff(y)
+        self.assertAlmostEqual(row["geo_scanpath_len"],
+                               np.sqrt(dx ** 2 + dy ** 2).sum())
+        self.assertAlmostEqual(row["tem_dur_total"], g["GazeEventDuration"].sum())
         self.assertAlmostEqual(row["pup_mean"], g["pup"].mean())
         self.assertAlmostEqual(
-            row["pupbl_mean"],
+            row["pupbl_std"],
             (((g["PupilLeft"] - g["PupilLeftBaseline"])
-              + (g["PupilRight"] - g["PupilRightBaseline"])) / 2.0).mean(),
-        )
-        self.assertAlmostEqual(
-            row["pupdiff_mean"], (g["PupilLeft"] - g["PupilRight"]).mean()
+              + (g["PupilRight"] - g["PupilRightBaseline"])) / 2.0).std(),
         )
         self.assertAlmostEqual(
             row["sac_amp_mean"], g["SaccadicAmplitude"].mean()
