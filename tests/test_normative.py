@@ -140,5 +140,77 @@ class TestNormativeData(unittest.TestCase):
         self.assertEqual(maskb.shape, (3, 11))
 
 
+class TestNormativeModel(unittest.TestCase):
+    """Model: forward shapes, CO-only latent bank, buffers in state_dict."""
+
+    def setUp(self):
+        from begad_norm.normative import model
+        self.model = model
+        self.ds = None  # built lazily (real data) in the bank test
+
+    def _dummy_input(self, B=4):
+        D = torch.randn(B, 11, 25)
+        mask = torch.ones(B, 11)
+        return (D, mask)
+
+    def test_forward_binary(self):
+        # Binary problems use a single sigmoid output (spec §1.4).
+        m = self.model.NormativeModel(n_classes=1)
+        prob, aux = m(self._dummy_input())
+        self.assertEqual(prob.shape, (4, 1))
+        self.assertTrue(((prob >= 0) & (prob <= 1)).all())
+        self.assertIn("emb", aux)
+
+    def test_forward_three_class(self):
+        m = self.model.NormativeModel(n_classes=3)
+        prob, aux = m(self._dummy_input())
+        self.assertEqual(prob.shape, (4, 3))
+        self.assertTrue(np.allclose(prob.detach().numpy().sum(axis=1), 1.0,
+                                    atol=1e-5))
+        self.assertIn("emb", aux)
+
+    def test_refresh_bank_matches_manual_co_stats(self):
+        from begad_norm.normative.data import NormativeDataset
+        pids = load_participants()
+        ds = NormativeDataset(pids, pids, FEATURES_CSV, METADATA_CSV,
+                              "co_vs_mci")
+        m = self.model.NormativeModel(n_classes=2)
+        m.refresh_bank(ds)
+        # manual recomputation over the CO rows only
+        with torch.no_grad():
+            z = m.encoder(ds.X.view(-1, 25)).view(ds.X.shape[0], 11, 128)
+        co = ds.co_indices()
+        zc = z[co]
+        mc = ds.mask[co][..., None]
+        mu = (zc * mc).sum(0) / mc.sum(0).clamp(min=1)
+        var = ((zc - mu[None]) ** 2 * mc).sum(0) / mc.sum(0).clamp(min=1)
+        sigma = torch.sqrt(var.clamp(min=1e-6)) + 1e-6
+        self.assertTrue(np.allclose(mu.numpy(), m.bank_mu.numpy(), atol=1e-5))
+        self.assertTrue(np.allclose(sigma.numpy(), m.bank_sigma.numpy(),
+                                    atol=1e-5))
+
+    def test_refresh_bank_ignores_non_co_rows(self):
+        """Zeroing non-CO inputs must leave the CO-only bank unchanged."""
+        from begad_norm.normative.data import NormativeDataset
+        pids = load_participants()
+        ds = NormativeDataset(pids, pids, FEATURES_CSV, METADATA_CSV,
+                              "co_vs_mci")
+        m = self.model.NormativeModel(n_classes=2)
+        m.refresh_bank(ds)
+        mu_before = m.bank_mu.clone()
+        sigma_before = m.bank_sigma.clone()
+        non_co = [i for i in range(len(ds.subjects)) if i not in ds.co_indices()]
+        ds.X[non_co] = 0.0
+        m.refresh_bank(ds)
+        self.assertTrue(torch.allclose(mu_before, m.bank_mu))
+        self.assertTrue(torch.allclose(sigma_before, m.bank_sigma))
+
+    def test_bank_buffers_in_state_dict(self):
+        m = self.model.NormativeModel(n_classes=2)
+        keys = m.state_dict().keys()
+        self.assertIn("bank_mu", keys)
+        self.assertIn("bank_sigma", keys)
+
+
 if __name__ == "__main__":
     unittest.main()
