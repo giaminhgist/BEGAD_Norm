@@ -102,4 +102,4 @@ class NormativeModel(nn.Module):
             prob = torch.sigmoid(out)
         else:
             prob = torch.softmax(out, dim=1)
-        return prob, {"emb": h}
+        return prob, {"emb": h, "logits": out}

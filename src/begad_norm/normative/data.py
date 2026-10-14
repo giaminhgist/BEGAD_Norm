@@ -89,13 +89,19 @@ class NormativeDataset:
         self.labels = np.array([spec["labels"][g] for g in self.group_labels])
         feature_cols = [c for c in pd.read_csv(features_csv, nrows=1).columns
                         if c not in ("participant_id", "task")]
-        mats = build_matrices(self.subjects, features_csv, feature_cols, n_tasks)
-        # Stats are fitted on the train participants that belong to this
-        # problem's groups (a train list may still contain out-of-problem ids).
+        # Matrices cover the union of this dataset's subjects and the train
+        # participants (both restricted to the problem's groups): stats need
+        # the train fold even when this dataset holds only val subjects, and
+        # a train list may still contain out-of-problem ids.
+        all_ids = list(dict.fromkeys(
+            self.subjects + [str(p) for p in train_participants]))
+        all_ids = [p for p in all_ids
+                   if meta.loc[p, "group_label"] in spec["groups"]]
+        mats = build_matrices(all_ids, features_csv, feature_cols, n_tasks)
         train = [str(p) for p in train_participants if str(p) in mats]
         if not train:
             raise ValueError("train_participants has no overlap with the "
-                             "dataset subjects (problem groups)")
+                             "problem groups")
         mu, sigma = feature_norm_stats(train, mats)
         self.X, self.mask = [], []
         for s in self.subjects:

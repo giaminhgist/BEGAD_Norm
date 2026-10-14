@@ -2,7 +2,11 @@
 
 Follows the unittest style of the existing suite (tests/test_rawdata.py, ...).
 """
+import os
+import shutil
+import tempfile
 import unittest
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -210,6 +214,182 @@ class TestNormativeModel(unittest.TestCase):
         keys = m.state_dict().keys()
         self.assertIn("bank_mu", keys)
         self.assertIn("bank_sigma", keys)
+
+
+def _small_datasets(problem="co_vs_mci", train_spec=None, val_spec=None):
+    """Tiny real-data train/val dataset pair with both classes present."""
+    from begad_norm.normative.data import NormativeDataset
+    meta = pd.read_csv(METADATA_CSV).set_index("participant_id")
+    pids = load_participants()
+    groups = {}
+    for g in ("CO", "MCI", "AD"):
+        groups[g] = [p for p in pids if meta.loc[p, "group_label"] == g]
+    if problem == "co_vs_mci":
+        train_pids = groups["CO"][:20] + groups["MCI"][:8]
+        val_pids = groups["CO"][20:25] + groups["MCI"][8:10]
+    else:  # co_mci_ad
+        train_pids = (groups["CO"][:20] + groups["MCI"][:8] + groups["AD"][:4])
+        val_pids = (groups["CO"][20:24] + groups["MCI"][8:10] + groups["AD"][4:6])
+    if train_spec is not None:  # allow tests to override (e.g. CO-only val)
+        train_pids, val_pids = train_spec, val_spec
+    ds_tr = NormativeDataset(train_pids, train_pids, FEATURES_CSV,
+                             METADATA_CSV, problem)
+    ds_va = NormativeDataset(val_pids, train_pids, FEATURES_CSV, METADATA_CSV,
+                             problem)
+    return ds_tr, ds_va
+
+
+class TestMetrics(unittest.TestCase):
+    """compute_metrics must match the baseline's metric semantics."""
+
+    def test_metrics_binary_matches_sklearn(self):
+        from begad_norm.normative.metrics import compute_metrics
+        from sklearn.metrics import (accuracy_score, confusion_matrix,
+                                     f1_score, precision_score,
+                                     recall_score, roc_auc_score)
+        rng = np.random.default_rng(0)
+        y = rng.integers(0, 2, 60)
+        prob = rng.random(60)
+        m = compute_metrics(y, prob, n_classes=1)
+        pred = (prob >= 0.5).astype(int)
+        tn, fp, fn, tp = confusion_matrix(y, pred, labels=[0, 1]).ravel()
+        self.assertAlmostEqual(m["acc"], accuracy_score(y, pred))
+        self.assertAlmostEqual(m["sen"], recall_score(y, pred, pos_label=1))
+        self.assertAlmostEqual(m["precision"],
+                               precision_score(y, pred, pos_label=1,
+                                               zero_division=0.0))
+        self.assertAlmostEqual(m["spec"], tn / (tn + fp))
+        self.assertAlmostEqual(m["auc"], roc_auc_score(y, prob))
+        self.assertAlmostEqual(m["f1"],
+                               f1_score(y, pred, pos_label=1,
+                                        zero_division=0.0))
+
+    def test_metrics_multiclass_matches_sklearn(self):
+        from begad_norm.normative.metrics import compute_metrics
+        from sklearn.metrics import (accuracy_score, f1_score,
+                                     precision_score, recall_score,
+                                     roc_auc_score)
+        rng = np.random.default_rng(1)
+        y = rng.integers(0, 3, 60)
+        p = rng.random((60, 3))
+        p = p / p.sum(1, keepdims=True)
+        m = compute_metrics(y, p, n_classes=3)
+        pred = p.argmax(1)
+        self.assertAlmostEqual(m["acc"], accuracy_score(y, pred))
+        self.assertAlmostEqual(m["sen"],
+                               recall_score(y, pred, average="macro",
+                                            zero_division=0.0))
+        self.assertAlmostEqual(m["precision"],
+                               precision_score(y, pred, average="macro",
+                                               zero_division=0.0))
+        self.assertAlmostEqual(m["f1"],
+                               f1_score(y, pred, average="macro",
+                                        zero_division=0.0))
+        self.assertAlmostEqual(m["auc"],
+                               roc_auc_score(y, p, multi_class="ovr",
+                                             average="macro"))
+        # spec = mean per-class TN/(TN+FP), recomputed independently
+        cm = np.zeros((3, 3), dtype=int)
+        for a, b in zip(y, pred):
+            cm[a, b] += 1
+        specs = []
+        for c in range(3):
+            tn = cm.sum() - cm[c, :].sum() - cm[:, c].sum() + cm[c, c]
+            fp = cm[:, c].sum() - cm[c, c]
+            specs.append(tn / (tn + fp))
+        self.assertAlmostEqual(m["spec"], float(np.mean(specs)))
+
+
+class TestTrainer(unittest.TestCase):
+    """Seeded training loop: determinism, checkpoint restore, early stop."""
+
+    def setUp(self):
+        from begad_norm.normative.trainer import NormativeConfig
+        self.trainer_cfg_cls = NormativeConfig
+        self.tmp = tempfile.mkdtemp(prefix="normative_test_")
+
+    def tearDown(self):
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def _cfg(self, **kw):
+        from begad_norm.normative.trainer import NormativeConfig
+        base = dict(experiment="test", problem="co_vs_mci",
+                    model="normative_mlp_deepset", seed=7, fold=1,
+                    epochs=3, patience=5, lr=1e-3, weight_decay=1e-4,
+                    batch_size=16, dropout=0.3, n_classes=1,
+                    out_root=self.tmp)
+        base.update(kw)
+        return NormativeConfig(**base)
+
+    def _factory(self, n_classes):
+        from begad_norm.normative.model import NormativeModel
+        return lambda: NormativeModel(n_classes=n_classes)
+
+    def test_deterministic_same_seed(self):
+        from begad_norm.normative.trainer import train_model
+        ds_tr, ds_va = _small_datasets()
+        cfg = self._cfg(out_root=os.path.join(self.tmp, "a"))
+        s1 = train_model(self._factory(1), ds_tr, ds_va, cfg, "cpu")
+        cfg = self._cfg(out_root=os.path.join(self.tmp, "b"))
+        s2 = train_model(self._factory(1), ds_tr, ds_va, cfg, "cpu")
+        self.assertEqual(s1["best_val_auc"], s2["best_val_auc"])
+        self.assertEqual(s1["best_epoch"], s2["best_epoch"])
+        # per-epoch logs must match except elapsed_s (wall-clock timing)
+        import json as _json
+        rows1 = [_json.loads(l) for l in
+                 (Path(s1["run_dir"]) / "metrics.jsonl").read_text().splitlines()]
+        rows2 = [_json.loads(l) for l in
+                 (Path(s2["run_dir"]) / "metrics.jsonl").read_text().splitlines()]
+        for r in rows1 + rows2:
+            r.pop("elapsed_s", None)
+        self.assertEqual(rows1, rows2)
+
+    def test_checkpoint_restore_reproduces_val(self):
+        from begad_norm.normative.trainer import train_model
+        from begad_norm.normative.model import NormativeModel
+        ds_tr, ds_va = _small_datasets()
+        cfg = self._cfg(epochs=5)
+        s = train_model(self._factory(1), ds_tr, ds_va, cfg, "cpu")
+        ckpt = torch.load(Path(s["run_dir"]) / "best.pt", weights_only=False)
+        m = NormativeModel(n_classes=1)
+        m.load_state_dict(ckpt["model_state"])
+        m.eval()
+        prob, _ = m((ds_va.X, ds_va.mask))
+        best_probs = np.array(ckpt["val_probs"], dtype=np.float64)
+        self.assertTrue(np.allclose(prob.detach().numpy().ravel(), best_probs,
+                                    atol=1e-6))
+        self.assertEqual(ckpt["val_auc"], s["best_val_auc"])
+
+    def test_early_stopping_mechanism(self):
+        """lr=0 -> val AUC constant -> stops after `patience` stale epochs."""
+        from begad_norm.normative.trainer import train_model
+        ds_tr, ds_va = _small_datasets()
+        cfg = self._cfg(lr=0.0, epochs=8, patience=3)
+        s = train_model(self._factory(1), ds_tr, ds_va, cfg, "cpu")
+        self.assertEqual(s["stopping_reason"], "early_stopping")
+        self.assertEqual(s["epochs_trained"], 4)  # epochs 0..3
+
+    def test_single_class_val_raises(self):
+        from begad_norm.normative.trainer import train_model
+        meta = pd.read_csv(METADATA_CSV).set_index("participant_id")
+        pids = load_participants()
+        co = [p for p in pids if meta.loc[p, "group_label"] == "CO"]
+        mci = [p for p in pids if meta.loc[p, "group_label"] == "MCI"]
+        ds_tr, ds_va = _small_datasets(
+            train_spec=co[:10] + mci[:8], val_spec=co[10:15])  # CO-only val
+        cfg = self._cfg(epochs=2)
+        with self.assertRaises(RuntimeError) as ctx:
+            train_model(self._factory(1), ds_tr, ds_va, cfg, "cpu")
+        self.assertIn("NaN", str(ctx.exception))
+
+    def test_three_class_run(self):
+        from begad_norm.normative.trainer import train_model
+        ds_tr, ds_va = _small_datasets(problem="co_mci_ad")
+        cfg = self._cfg(problem="co_mci_ad", n_classes=3, epochs=3)
+        s = train_model(self._factory(3), ds_tr, ds_va, cfg, "cpu")
+        self.assertTrue(np.isfinite(s["best_val_metrics"]["auc"]))
+        preds = pd.read_csv(Path(s["run_dir"]) / "predictions.csv")
+        self.assertEqual(len(preds), len(ds_va.subjects))
 
 
 if __name__ == "__main__":
