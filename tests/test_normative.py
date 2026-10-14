@@ -391,6 +391,20 @@ class TestTrainer(unittest.TestCase):
         preds = pd.read_csv(Path(s["run_dir"]) / "predictions.csv")
         self.assertEqual(len(preds), len(ds_va.subjects))
 
+    def test_singleton_tail_batch(self):
+        """17 train subjects = 16 + 1: the singleton tail batch must not
+        crash BatchNorm1d (real folds have 113 = 7*16 + 1 train subjects)."""
+        from begad_norm.normative.trainer import train_model
+        meta = pd.read_csv(METADATA_CSV).set_index("participant_id")
+        pids = load_participants()
+        co = [p for p in pids if meta.loc[p, "group_label"] == "CO"]
+        mci = [p for p in pids if meta.loc[p, "group_label"] == "MCI"]
+        ds_tr, ds_va = _small_datasets(
+            train_spec=co[:10] + mci[:7], val_spec=co[10:14] + mci[7:9])
+        cfg = self._cfg(epochs=2, batch_size=16)
+        s = train_model(self._factory(1), ds_tr, ds_va, cfg, "cpu")
+        self.assertEqual(s["stopping_reason"], "max_epochs")
+
 
 if __name__ == "__main__":
     unittest.main()

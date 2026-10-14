@@ -155,6 +155,11 @@ def train_model(model_factory, train_ds, val_ds, cfg, device="cpu",
         on_loss, on_n = 0.0, 0
         for i in range(0, len(order), cfg.batch_size):
             idx = order[i:i + cfg.batch_size]
+            if len(idx) == 1:
+                # Merge a singleton tail batch (n_train = k*batch + 1) into
+                # the previous batch: BatchNorm1d in the head needs >= 2
+                # samples in training mode, and no subject may be dropped.
+                idx = order[i - cfg.batch_size:i + 1]
             xb = (train_ds.X[idx].to(device), train_ds.mask[idx].to(device))
             yb = torch.tensor(train_ds.labels[idx], dtype=torch.long,
                               device=device)
