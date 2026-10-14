@@ -1,0 +1,2 @@
+dataset,problem,model,seed,fold,n_train,n_test,acc,sen,precision,spec,auc,f1
+processed_dataset,co_vs_mci,normative_mlp_deepset,42,1,112,29,0.5172413793103449,0.8888888888888888,0.38095238095238093,0.35,0.6888888888888889,0.5333333333333333
