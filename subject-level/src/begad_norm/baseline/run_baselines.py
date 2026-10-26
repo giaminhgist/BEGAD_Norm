@@ -43,7 +43,9 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import yaml
+from lightgbm import LGBMClassifier
 from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import (accuracy_score, confusion_matrix, f1_score,
@@ -61,8 +63,11 @@ MODELS = {
     "MLPClassifier": MLPClassifier,
     "QuadraticDiscriminantAnalysis": QuadraticDiscriminantAnalysis,
     "GaussianNB": GaussianNB,
+    "RandomForestClassifier": RandomForestClassifier,
+    "LGBMClassifier": LGBMClassifier,
 }
-RANDOM_STATE_MODELS = {"logistic_regression", "svm_rbf", "svm_linear", "fnn"}
+RANDOM_STATE_MODELS = {"logistic_regression", "svm_rbf", "svm_linear", "fnn",
+                       "random_forest", "lightgbm"}
 METRIC_COLS = ["acc", "sen", "precision", "spec", "auc", "f1"]
 DETAIL_COLS = ["dataset", "problem", "model", "seed", "fold", "n_train",
                "n_test"] + METRIC_COLS
@@ -174,7 +179,8 @@ def make_model(name, spec, seed, class_weight=None, priors=None):
     if name in RANDOM_STATE_MODELS:
         kwargs["random_state"] = seed
     if class_weight == "balanced":
-        if name in ("logistic_regression", "svm_rbf", "svm_linear"):
+        if name in ("logistic_regression", "svm_rbf", "svm_linear",
+                    "random_forest", "lightgbm"):
             kwargs["class_weight"] = "balanced"
         elif name in ("qda", "gnb") and priors is not None:
             kwargs["priors"] = priors
