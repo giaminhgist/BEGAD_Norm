@@ -1,0 +1,15 @@
+{
+  "experiment": "normative_main",
+  "problem": "co_vs_mci",
+  "model": "normative_mlp_deepset",
+  "seed": 42,
+  "fold": 5,
+  "epochs": 150,
+  "patience": 30,
+  "lr": 0.001,
+  "weight_decay": 0.0001,
+  "batch_size": 16,
+  "dropout": 0.3,
+  "n_classes": 1,
+  "out_root": "/home/paperspace/BEGAD_Norm/outputs/normative"
+}
