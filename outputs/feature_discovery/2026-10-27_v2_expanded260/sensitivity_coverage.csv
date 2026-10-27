@@ -1,0 +1,16 @@
+cohort_id,level,coverage_threshold,label,eligible_main_hypotheses,selected_main,selected_three_pairs,joint_fdr_supported,main_candidate_regions
+RAW157,macro,0.5,sensitivity,215,40,7,2,NA
+ROI64_T1235,macro,0.5,sensitivity,50,8,0,0,NA
+ROI64_T5,macro,0.5,sensitivity,11,0,0,0,NA
+ROI64_T1235,micro,0.5,sensitivity,1887,129,10,0,79.0
+ROI64_T5,micro,0.5,sensitivity,852,50,9,0,32.0
+RAW157,macro,0.75,sensitivity,212,40,7,4,NA
+ROI64_T1235,macro,0.75,sensitivity,36,6,0,0,NA
+ROI64_T5,macro,0.75,sensitivity,3,0,0,0,NA
+ROI64_T1235,micro,0.75,sensitivity,825,64,4,0,42.0
+ROI64_T5,micro,0.75,sensitivity,61,6,1,0,4.0
+RAW157,macro,0.6,primary,214,40,7,4,NA
+ROI64_T1235,macro,0.6,primary,39,7,0,0,NA
+ROI64_T5,macro,0.6,primary,10,0,0,0,NA
+ROI64_T1235,micro,0.6,primary,1338,107,9,0,65.0
+ROI64_T5,micro,0.6,primary,526,41,6,0,25.0

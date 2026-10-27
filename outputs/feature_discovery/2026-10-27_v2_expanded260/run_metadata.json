@@ -1,0 +1,41 @@
+{
+ "stages": {
+  "audit": {
+   "completed_utc": "2026-10-27T20:51:40+00:00",
+   "seconds": 44.4
+  },
+  "propose": {
+   "completed_utc": "2026-10-27T20:51:42+00:00",
+   "seconds": 0.8
+  },
+  "freeze": {
+   "completed_utc": "2026-10-27T20:51:43+00:00",
+   "seconds": 0.1
+  },
+  "extract": {
+   "completed_utc": "2026-10-27T20:52:44+00:00",
+   "seconds": 53.3
+  },
+  "stats": {
+   "completed_utc": "2026-10-27T21:00:03+00:00",
+   "seconds": 90.3
+  },
+  "stability": {
+   "completed_utc": "2026-10-27T21:05:30+00:00",
+   "seconds": 315.6
+  },
+  "report": {
+   "completed_utc": "2026-10-27T21:08:22+00:00",
+   "seconds": 38.8
+  }
+ },
+ "command": "python -m begad_norm.feature_discovery.cli report --run-dir outputs/feature_discovery/2026-10-27_v2_expanded260",
+ "git_commit": "652567263a7c9727b15f281c4e96f6bde9d97106",
+ "git_status_porcelain": "?? .python-version\n?? README.md\n?? README.vi.md\n?? Running_Phase/\n?? configs/\n?? outputs/\n?? pyproject.toml\n?? src/\n?? tests/\n?? uv.lock",
+ "python": "3.10.12",
+ "platform": "Linux-5.15.0-124-generic-x86_64-with-glibc2.35",
+ "debug_only": false,
+ "run_status": "partial_sources",
+ "run_status_reason": "ROI geometry/reading order, audio/speech annotations, lexical metadata, continuous pupil and media onset events are absent; supported analyses completed",
+ "seed": 20261027
+}

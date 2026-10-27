@@ -1,0 +1,11 @@
+cohort_id,level,origin,defined,available_definitions,hypotheses_extracted,testable_main,selected_main,selected_three_pairs,pass_MCI_AD,joint_fdr_supported,stable_candidate,in_top20_selected
+RAW157,macro,base160,80,23,89,89,23,5,10,2,10,NA
+RAW157,macro,dataset100,43,33,126,125,17,2,30,2,9,NA
+ROI64_T1235,macro,base160,80,4,13,9,0,0,1,0,0,NA
+ROI64_T1235,macro,dataset100,43,10,37,30,7,0,8,0,4,NA
+ROI64_T5,macro,base160,80,3,3,3,0,0,1,0,0,NA
+ROI64_T5,macro,dataset100,43,8,8,7,0,0,1,0,0,NA
+ROI64_T1235,micro,base160,80,3,837,525,50,3,86,0,13,0.0
+ROI64_T1235,micro,dataset100,6,5,1393,813,57,6,157,0,10,0.0
+ROI64_T5,micro,base160,80,3,477,240,14,3,46,0,2,0.0
+ROI64_T5,micro,dataset100,6,4,636,286,27,3,61,0,1,0.0
