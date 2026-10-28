@@ -1,0 +1,118 @@
+# Task-specific learning + late probability fusion on the 33-feature x 4-task
+# dataset. One row per participant: processed_dataset_33feat_wide.csv (33
+# features x 4 tasks = 132 columns, 157 subjects). Each task model (KD1, KD2,
+# KD3, READING) sees only its own 33 features; the four task probability
+# vectors are combined afterwards. The concatenated 132-feature model
+# (concat132) is run with the identical tuning protocol as the reference for
+# the "does splitting by task reduce overfitting" hypothesis.
+#
+# Variants per (problem, model_type, fold):
+#   task_kd1 .. task_reading  individual task models (A)
+#   fusion_equal4             mean of the 4 task probabilities (B)
+#   fusion_learned            weights learned from inner OOF probabilities,
+#                             log-loss + KL(w || uniform) regularization (C)
+#   fusion_equal3kd           mean of KD1/KD2/KD3 only, READING excluded (D)
+#   concat132                 all 132 features in one model (reference)
+#
+# Split (fixed, identical to the baselines): 4 held-out AD subjects appended
+# to EVERY validation fold and never in training; the remaining 153 subjects
+# form 4 stratified folds (seed 42). Inner CV (4 folds, seed 42) and
+# inner-inner CV (4 folds, seed 7) run on training subjects only.
+#
+# Tuning budget (identical for both model families and for the contrast
+# experiment): hyperparameters are selected by mean CV log-loss.
+#   elasticnet: C x l1_ratio = 4 x 3 = 12 combinations
+#   svm_rbf:    C x gamma = 3 x 3 = 9 combinations (gamma = k / n_features,
+#               features are standardized so sklearn 'scale' == 1/n_features)
+#   SVM probabilities via CalibratedClassifierCV(sigmoid) with adaptive stratified
+#   calibration folds min(5, smallest class count), deterministic.
+#
+# Models are unweighted (class_weight=None) on purpose: fusion combines raw
+# model probabilities and balanced class weights would shift their scale
+# per problem; the baseline's balanced convention is reported separately.
+# Decision threshold 0.5 for the headline binary metrics; the Youden-J
+# threshold is derived from inner OOF (training-level) probabilities and
+# reported as supplementary columns.
+
+experiment:
+  name: fusion
+  description: >-
+    Task-specific elastic-net LR / calibrated SVM-RBF per task (KD1, KD2, KD3,
+    READING) with late probability fusion (equal weights, learned weights from
+    inner OOF with KL regularization toward uniform, equal 3-KD weights) plus
+    the concatenated 132-feature reference, all with the same nested tuning
+    protocol. 3 problems x 2 model types x 8 variants x 4 folds = 192
+    evaluations.
+
+data:
+  wide_csv: processed_dataset/processed_dataset_33feat_wide.csv
+  label_col: group
+  id_col: subject_id
+  n_feature_columns: 132
+  tasks: [KD1, KD2, KD3, READING]
+  n_features_per_task: 33
+  class_weight: null         # documented choice, see header comment
+
+split:
+  assignments_csv: processed_dataset/splits/cv_fold_assignments.csv
+  heldout_csv: processed_dataset/splits/heldout_ad_subjects.csv
+  n_folds: 4
+  n_cv_subjects: 153
+  n_heldout_ad: 4
+  expect:                    # sanity checks per fold
+    ad_val: 7                # 3 AD from the fold + 4 held-out AD
+    ad_train: 9              # 12 AD in CV folds - 3 in the val fold
+
+problems:
+  - name: co_mci_ad
+    include_groups: [CN, MCI, AD]
+    positive: null
+  - name: co_vs_mci
+    include_groups: [CN, MCI]
+    positive: MCI
+  - name: co_vs_ad
+    include_groups: [CN, AD]
+    positive: AD
+
+cv:
+  n_folds: 4
+  inner_folds: 4
+  inner_inner_folds: 4
+  inner_seed: 42             # inner CV for validation-refit tuning
+  inner_inner_seed: 7        # tuning inside each inner OOF fold
+  unit: participant
+  stratify_by: group
+
+models:
+  elasticnet:
+    grid:
+      C: [0.01, 0.1, 1.0, 10.0]
+      l1_ratio: [0.1, 0.5, 0.9]
+  svm_rbf:
+    grid:
+      C: [0.1, 1.0, 10.0]
+      gamma_scale_mult: [0.1, 1.0, 10.0]   # gamma = mult / n_features
+    calibrate: {cv: adaptive_min5, method: sigmoid}
+
+fusion:
+  lambda_reg: 0.1            # KL(w || uniform) weight in the learned-weight objective
+  n_random_starts: 8         # random simplex starts besides uniform and one-hots
+  start_seed: 0
+  variants: [task_kd1, task_kd2, task_kd3, task_reading,
+             fusion_equal4, fusion_learned, fusion_equal3kd, concat132]
+  equal_weights: [0.25, 0.25, 0.25, 0.25]
+  kd3_weights: [0.3333333333333333, 0.3333333333333333, 0.3333333333333333, 0.0]
+
+threshold: 0.5
+youden:
+  source: inner_oof          # Youden threshold from training-level OOF probabilities
+
+output:
+  dir: output/fusion
+  detail_csv: results/results_detail.csv
+  smoke_csv: results/smoke_detail.csv
+  summary_csv: results/summary.csv
+  weights_csv: results/fusion_weights.csv
+  paired_deltas_csv: results/paired_deltas.csv
+  proba_prefix: results/proba
+  run_log_csv: run_log.csv
