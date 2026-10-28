@@ -1,0 +1,98 @@
+# Baseline experiment — 37-feature processed dataset (RAW157), participant-wide input.
+# One row per participant: processed_dataset_v1_wide.csv (24 features x 4 tasks = 96 columns,
+# complete-case, no missing cells). Fixed split from processed_dataset/splits/ (seed 42):
+# 4 held-out AD subjects are appended to EVERY validation fold and never enter training;
+# the remaining 153 subjects are 4 stratified folds. 10 model seeds x 4 folds = 40 evaluations
+# per (problem, model); seeds are model random_state only (LR/SVM/GNB are deterministic, so
+# their 10 seed-rows repeat identically).
+# Class imbalance: balanced class weights (LR/SVM/RF/LGBM), inverse-frequency priors (GNB),
+# sample weights (MLP), all computed from the training split of each fold.
+# No threshold tuning: binary predictions use the fixed default threshold 0.5.
+
+experiment:
+  name: baseline
+  description: >-
+    6 baseline classifiers on processed_dataset_v1_wide (24 features x 4 tasks, 157 subjects,
+    CN 100 / MCI 41 / AD 16). Fixed split: 4 held-out AD appended to every validation fold,
+    153 subjects in 4 stratified folds. 3 problems x 6 models x 10 seeds x 4 folds = 720
+    train/validation evaluations. Imbalance handling: balanced weights / priors / sample
+    weights per model family.
+
+data:
+  wide_csv: processed_dataset/processed_dataset_v1_wide.csv
+  label_col: group
+  id_col: subject_id
+  class_weight: balanced
+  threshold: 0.5
+
+split:
+  assignments_csv: processed_dataset/splits/cv_fold_assignments.csv
+  heldout_csv: processed_dataset/splits/heldout_ad_subjects.csv
+  n_folds: 4
+
+problems:
+  - name: co_mci_ad
+    include_groups: [CN, MCI, AD]   # 3-class (CN=0, MCI=1, AD=2; metrics are macro + per-class)
+    positive: null
+  - name: co_vs_mci
+    include_groups: [CN, MCI]       # binary, positive class = MCI
+    positive: MCI
+  - name: co_vs_ad
+    include_groups: [CN, AD]        # binary, positive class = AD
+    positive: AD
+
+cv:
+  n_folds: 4
+  seeds: [42, 2026, 1, 0, 7, 123, 1234, 2024, 2025, 1337]   # first 10 seeds of the subject-level convention
+  unit: participant
+  stratify_by: group
+
+models:
+  logistic_regression:
+    class: LogisticRegression
+    kwargs: {max_iter: 2000}
+  svm_rbf:
+    class: SVC
+    kwargs: {C: 1.0, kernel: rbf, gamma: scale}
+    # probabilities via CalibratedClassifierCV(SVC, cv=5, sigmoid) in make_model
+    # (deterministic; SVC(probability=True) is deprecated and nondeterministic)
+  random_forest:
+    class: RandomForestClassifier
+    kwargs: {n_estimators: 500, min_samples_leaf: 2}
+  lightgbm:
+    class: LGBMClassifier
+    kwargs: {n_estimators: 300, learning_rate: 0.05, verbosity: -1,
+             bagging_fraction: 0.8, bagging_freq: 1, feature_fraction: 0.8}
+    # bagging enabled so random_state=seed actually changes the fit
+    # (LGBM defaults with bagging_fraction=1 are deterministic)
+  gaussian_nb:
+    class: GaussianNB
+    kwargs: {var_smoothing: 1.0e-09}
+  mlp:
+    class: MLPClassifier
+    kwargs:
+      hidden_layer_sizes: [64, 32]
+      activation: relu
+      solver: adam
+      alpha: 0.0001
+      batch_size: 32
+      learning_rate_init: 0.001
+      max_iter: 300
+
+metrics:
+  - acc
+  - sen          # binary: recall of positive (MCI/AD); 3-class: macro recall
+  - precision    # binary: positive class; 3-class: macro
+  - spec         # binary: TN/(TN+FP); 3-class: mean per-class TN/(TN+FP)
+  - auc          # binary: ROC-AUC of positive; 3-class: one-vs-rest macro AUC
+  - f1           # binary: positive class; 3-class: macro
+  # per-class columns (3-class only; empty for binary rows):
+  - recall_cn, recall_mci, recall_ad, precision_cn, precision_mci, precision_ad, f1_cn, f1_mci, f1_ad
+
+output:
+  dir: output/baseline
+  detail_csv: results/results_detail.csv
+  smoke_csv: results/smoke_detail.csv
+  summary_csv: results/summary.csv
+  confusion_csv: results/confusion_summary.csv
+  run_log_csv: run_log.csv

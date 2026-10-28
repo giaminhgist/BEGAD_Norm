@@ -1,6 +1,0 @@
-canonical_task,expected_rois,regions_with_data,testable_regions,main_selected_regions,selected_fraction_of_testable,feature_families_tested,median_anchor_min_coverage,p_task,regions_any_CN_AD,regions_any_CN_MCI,regions_any_MCI_AD,q_task_bh,q_task_by,task_rank,cohort_id
-KD1,40,40,40,18,0.45,8,0.8745098039215686,1.0,36,34,32,1.0,1.0,1,ROI64_T1235
-KD2,40,40,40,16,0.4,8,0.8125,1.0,33,29,26,1.0,1.0,2,ROI64_T1235
-KD3,40,40,38,15,0.39473684210526316,8,0.8,1.0,33,29,24,1.0,1.0,3,ROI64_T1235
-READING,159,159,57,16,0.2807017543859649,8,0.6516544117647058,1.0,60,33,51,1.0,1.0,4,ROI64_T1235
-READING,159,159,80,25,0.3125,7,0.6666666666666666,1.0,73,67,58,1.0,1.0,1,ROI64_T5

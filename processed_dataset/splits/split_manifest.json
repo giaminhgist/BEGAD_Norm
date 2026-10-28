@@ -1,0 +1,65 @@
+{
+  "scheme": "holdout_4_ad_plus_stratified_4fold",
+  "seed": 42,
+  "n_folds": 4,
+  "n_heldout_ad": 4,
+  "source_dataset": "processed_dataset_v1_wide.csv (157 subjects: CN 100 / MCI 41 / AD 16; same subject set as processed_dataset_v2_long.csv)",
+  "method": "heldout AD: random.Random(seed).sample of the 16 AD subjects. CV folds: stratified by group; within-group seeded shuffle then round-robin assignment to folds 1..4 (same method as subject-level run_baselines.stratified_folds).",
+  "heldout_ad_subjects": [
+    "BEGAD-001",
+    "BEGAD-005",
+    "BEGAD-006",
+    "BEGAD-016"
+  ],
+  "heldout_ad_role": "excluded from every training fold; appended to every validation fold",
+  "fold_composition_train": {
+    "1": {
+      "CN": 75,
+      "MCI": 30,
+      "AD": 9
+    },
+    "2": {
+      "CN": 75,
+      "MCI": 31,
+      "AD": 9
+    },
+    "3": {
+      "CN": 75,
+      "MCI": 31,
+      "AD": 9
+    },
+    "4": {
+      "CN": 75,
+      "MCI": 31,
+      "AD": 9
+    }
+  },
+  "fold_composition_validation": {
+    "1": {
+      "CN": 25,
+      "MCI": 11,
+      "AD": 7
+    },
+    "2": {
+      "CN": 25,
+      "MCI": 10,
+      "AD": 7
+    },
+    "3": {
+      "CN": 25,
+      "MCI": 10,
+      "AD": 7
+    },
+    "4": {
+      "CN": 25,
+      "MCI": 10,
+      "AD": 7
+    }
+  },
+  "validation_rule": "validation(f) = subjects of fold f + the 4 held-out AD subjects",
+  "caveats": [
+    "The same 4 held-out AD subjects appear in every validation fold, so validation folds are not independent and pooled CV metrics overweight these 4 subjects.",
+    "The 4 held-out AD subjects are never seen in training, so the model does not learn from them.",
+    "Report per-fold metrics separately and do not treat the pooled CV mean as an unbiased generalization estimate. Reporting the 4 held-out AD separately is optional."
+  ]
+}
