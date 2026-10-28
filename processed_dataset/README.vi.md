@@ -60,6 +60,32 @@ Nếu cần bản theo task của feature bị loại nào đó (ví dụ D025 c
 có thể khôi phục từ bảng trích xuất dài bằng cách áp dụng quy tắc đủ theo từng task thay vì quy tắc tất cả
 các task.
 
+## Biến thể 33 features (157 subjects, impute ô khuyết tại thời điểm huấn luyện)
+
+Có thể dùng 9 features bị loại nếu impute các ô không hỗ trợ được thay vì yêu cầu complete-case.
+`processed_dataset_33feat_wide.csv` giữ **đủ 157 subjects**; 51 ô mà subject không hỗ trợ được
+(insufficient within-subject support, đều nằm trong 9 features mới thêm) được để NaN. 20 subjects có ít
+nhất một ô như vậy (CN 10 / MCI 6 / AD 4: BEG-202, BEG-220, BEG-231, BEG-234, BEG-247, BEG-260, BEG-275,
+BEG-277, BEG-282, BEG-283, BEGAD-002, BEGAD-005, BEGAD-007, BEGAD-019, BEGCO-004, BEGCO-020, BEGCO-029,
+BEGCO-032, BEGCO-035, BEGMCI-006).
+
+Imputation thực hiện lúc huấn luyện, không ghi sẵn vào bảng: pipeline baseline điền mỗi ô khuyết bằng
+**median theo cột, fit trên riêng split training của từng fold** (`SimpleImputer`, `strategy="median"`
+trong `src/baseline/run_baselines.py`), nên không giá trị validation hay held-out nào lọt vào training.
+Với 51/20724 ô khuyết (0.25%), lựa chọn imputer dự kiến ít ảnh hưởng; các phương án khác (điền 0 theo
+đặc thù feature cho D030, cột chỉ báo missingness) là khả thi và cần thay đổi thiết kế nếu dùng.
+
+| File | Cấu trúc |
+|---|---|
+| `processed_dataset_33feat_wide.csv` | 1 hàng mỗi subject (157 hàng). Cột: `subject_id`, `group`, sau đó 33 cột feature cho mỗi task theo thứ tự KD1, KD2, KD3, READING, đặt tên `{feature_id}__{task}` (132 cột feature, tổng 134 cột). 51 ô NaN, đều trong 9 features mới thêm. |
+| `processed_dataset_33feat_long.csv` | 4 hàng mỗi subject, mỗi hàng một task (628 hàng). Cột: `subject_id`, `group`, `task`, sau đó 33 cột feature (`A002`...`D047`). 51 ô NaN. |
+| `feature_columns_33feat.csv` | Danh sách 33 features với `feature_id`, `feature_name`, `unit`. |
+| `make_33feat_dataset.py` | Script dựng lại. Đọc `raw157_feature_values_long_full.csv`, giữ mọi subject, ghi NaN cho các ô `insufficient_within_subject_support` (assert 51 ô, đều trong 9 features mới thêm), và kiểm tra chéo 24 cột feature dùng chung với `processed_dataset_v1_wide.csv` (sai số 1e-9; hai file serialize float với độ chính xác khác nhau, chênh lệch <= 7e-15). |
+
+Vì không subject nào bị bỏ, baseline 33 features dùng lại **đúng splits của baseline 24 features**:
+`splits/cv_fold_assignments.csv`, `splits/heldout_ad_subjects.csv` (4 held-out AD: BEGAD-001, BEGAD-005,
+BEGAD-006, BEGAD-016). Config: `src/baseline/config_33feat.yaml` (`output/baseline_33feat/`).
+
 ## Nguồn gốc
 
 - Đầu vào trích xuất: `dataset/20250305/*.csv` (export sự kiện thô của Tobii) và

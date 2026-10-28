@@ -1,4 +1,6 @@
 # Baseline experiment — 37-feature processed dataset (RAW157), participant-wide input.
+# This is the 24-feature variant; for the 33-feature variant (137 subjects, complete-case
+# on the full 33 RAW157 features) see config_33feat.yaml.
 # One row per participant: processed_dataset_v1_wide.csv (24 features x 4 tasks = 96 columns,
 # complete-case, no missing cells). Fixed split from processed_dataset/splits/ (seed 42):
 # 4 held-out AD subjects are appended to EVERY validation fold and never enter training;
@@ -22,6 +24,7 @@ data:
   wide_csv: processed_dataset/processed_dataset_v1_wide.csv
   label_col: group
   id_col: subject_id
+  n_feature_columns: 96
   class_weight: balanced
   threshold: 0.5
 
@@ -29,6 +32,11 @@ split:
   assignments_csv: processed_dataset/splits/cv_fold_assignments.csv
   heldout_csv: processed_dataset/splits/heldout_ad_subjects.csv
   n_folds: 4
+  n_cv_subjects: 153       # subjects in the fold assignments (157 - 4 held-out)
+  n_heldout_ad: 4
+  expect:                  # sanity checks in evaluate() per fold
+    ad_val: 7              # 3 AD from the fold + 4 held-out AD
+    ad_train: 9            # 12 AD in CV folds - 3 in the val fold
 
 problems:
   - name: co_mci_ad

@@ -1,7 +1,10 @@
-"""BEGAD baseline classifiers on the processed 37-feature dataset (RAW157).
+"""BEGAD baseline classifiers on the processed RAW157 dataset.
 
-Runs every (problem, model, seed, fold) evaluation defined in config.yaml and
-writes one row per evaluation to the detail CSV.
+Runs every (problem, model, seed, fold) evaluation defined in a config file and
+writes one row per evaluation to the detail CSV. Two configs are provided:
+config.yaml (24 features x 4 tasks, 157 subjects, complete-case) and
+config_33feat.yaml (33 features x 4 tasks, 157 subjects; 51 missing cells in the
+9 added features are imputed per fold).
 
 Split (fixed, from processed_dataset/splits/): the 4 held-out AD subjects are
 appended to EVERY validation fold and never enter training; the remaining 153
@@ -10,14 +13,15 @@ LR/SVM/GNB are deterministic, so their 10 seed-rows repeat identically.
 
 Class imbalance: balanced class weights (LR/SVM/RF/LGBM), inverse-frequency
 priors (GNB) and sample weights (MLP), all fitted on the training split only.
-Features are standardized per fold on the training split (no imputation: the
-dataset is complete-case by construction).
+Features are standardized per fold on the training split; when the config sets
+data.impute (median), missing cells are imputed per fold with a SimpleImputer
+fitted on the training split only (no leakage from validation or held-out AD).
 
 Usage:
     PYTHONPATH=src .venv/bin/python -m baseline.run_baselines \
-        --config src/baseline/config.yaml --smoke
+        --config src/baseline/config_33feat.yaml --smoke
     PYTHONPATH=src .venv/bin/python -m baseline.run_baselines \
-        --config src/baseline/config.yaml
+        --config src/baseline/config_33feat.yaml
 """
 
 import argparse
@@ -44,6 +48,7 @@ from sklearn.metrics import (accuracy_score, confusion_matrix, f1_score,
                              precision_score, recall_score, roc_auc_score)
 from sklearn.naive_bayes import GaussianNB
 from sklearn.neural_network import MLPClassifier
+from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC
 
@@ -87,8 +92,15 @@ def load_data(cfg):
     df = pd.read_csv(ROOT / cfg["data"]["wide_csv"])
     id_col, label_col = cfg["data"]["id_col"], cfg["data"]["label_col"]
     feats = [c for c in df.columns if c not in (id_col, label_col)]
-    assert len(feats) == 96, (len(feats), "expected 24 features x 4 tasks")
-    assert df[feats].isna().to_numpy().sum() == 0, "dataset must be complete-case"
+    assert len(feats) == cfg["data"]["n_feature_columns"], \
+        (len(feats), f"expected {cfg['data']['n_feature_columns']} feature columns")
+    n_nan = int(df[feats].isna().to_numpy().sum())
+    if cfg["data"].get("allow_missing"):
+        # missing cells are imputed per fold (fitted on training only) in evaluate()
+        assert cfg["data"].get("impute") is not None, \
+            "allow_missing requires data.impute (e.g. median)"
+    else:
+        assert n_nan == 0, "dataset must be complete-case"
     return (df[feats].to_numpy(dtype=float),
             df[id_col].astype(str).to_numpy(),
             df[label_col].astype(str).to_numpy(),
@@ -100,7 +112,8 @@ def load_split(cfg):
     held = pd.read_csv(ROOT / cfg["split"]["heldout_csv"])
     fold_of = dict(zip(assign["subject_id"].astype(str), assign["fold"].astype(int)))
     held_ids = sorted(held["subject_id"].astype(str))
-    assert len(fold_of) == 153 and len(held_ids) == 4
+    assert len(fold_of) == cfg["split"]["n_cv_subjects"]
+    assert len(held_ids) == cfg["split"]["n_heldout_ad"]
     assert not (set(held_ids) & set(fold_of)), "heldout AD must not be in CV assignments"
     return fold_of, held_ids
 
@@ -194,15 +207,29 @@ def evaluate(cfg, X, y_global, groups, fold_of, held_ids, problem, model_name, s
     va = np.array([i for i in g_val if groups[i] in inc], dtype=int)
     y_tr, y_va = y_global[tr], y_global[va]
 
+    expect = cfg["split"]["expect"]
     if problem["name"] == "co_mci_ad":
-        assert (y_va == 2).sum() == 7, (fold, "expected 3 fold AD + 4 heldout AD")
-        assert (y_tr == 2).sum() == 9, (fold, "expected 12 AD - 3 fold AD in training")
+        assert (y_va == 2).sum() == expect["ad_val"], \
+            (fold, "AD in validation = fold AD + heldout AD")
+        assert (y_tr == 2).sum() == expect["ad_train"], \
+            (fold, "AD in training = CV AD - fold AD")
     elif problem["name"] == "co_vs_ad":
-        assert (y_va == 1).sum() == 7, (fold, "expected 7 AD in AD-positive validation")
+        assert (y_va == 1).sum() == expect["ad_val"], \
+            (fold, "expected fold AD + heldout AD in AD-positive validation")
 
-    scaler = StandardScaler().fit(X[tr])
-    X_tr = scaler.transform(X[tr])
-    X_val = scaler.transform(X[va])
+    # impute missing cells per fold with the training split only (leakage-free),
+    # then standardize on the same training split
+    if cfg["data"].get("impute") == "median":
+        imp = SimpleImputer(strategy="median").fit(X[tr])
+        X_tr = imp.transform(X[tr])
+        X_val = imp.transform(X[va])
+        assert np.isnan(X_tr).sum() == 0 and np.isnan(X_val).sum() == 0
+    else:
+        X_tr, X_val = X[tr], X[va]
+
+    scaler = StandardScaler().fit(X_tr)
+    X_tr = scaler.transform(X_tr)
+    X_val = scaler.transform(X_val)
 
     priors, sample_weights = None, None
     if cfg["data"].get("class_weight") == "balanced":

@@ -60,6 +60,34 @@ If per-task versions of any dropped feature are wanted (e.g. D025 for KD2/KD3/RE
 are present), they can be recovered from the extraction long table with the per-task completeness rule applied
 instead of the all-tasks rule.
 
+## 33-feature variant (157 subjects, missing cells imputed at model time)
+
+The 9 dropped features can be used if unsupported cells are imputed instead of requiring completeness.
+`processed_dataset_33feat_wide.csv` keeps **all 157 subjects**; the 51 cells a subject cannot support
+(insufficient within-subject support, all in the 9 added features) are left as NaN. 20 subjects have at
+least one such cell (CN 10 / MCI 6 / AD 4: BEG-202, BEG-220, BEG-231, BEG-234, BEG-247, BEG-260, BEG-275,
+BEG-277, BEG-282, BEG-283, BEGAD-002, BEGAD-005, BEGAD-007, BEGAD-019, BEGCO-004, BEGCO-020, BEGCO-029,
+BEGCO-032, BEGCO-035, BEGMCI-006).
+
+Imputation is done at model time, not baked into the tables: the baseline pipeline fills each missing
+cell with the **per-column median fitted on the training split of the fold only** (`SimpleImputer`,
+`strategy="median"` in `src/baseline/run_baselines.py`), so no validation or held-out value leaks into
+training. With 51/20724 missing cells (0.25%) the choice of imputer is expected to matter little;
+alternatives (feature-specific zero-fill for D030, missingness indicator columns) are possible and
+would require a design change.
+
+| File | Layout |
+|---|---|
+| `processed_dataset_33feat_wide.csv` | 1 row per subject (157 rows). Columns: `subject_id`, `group`, then 33 feature columns per task in the order KD1, KD2, KD3, READING, named `{feature_id}__{task}` (132 feature columns, 134 total). 51 NaN cells, all in the 9 added features. |
+| `processed_dataset_33feat_long.csv` | 4 rows per subject, one per task (628 rows). Columns: `subject_id`, `group`, `task`, then the 33 feature columns (`A002`...`D047`). 51 NaN cells. |
+| `feature_columns_33feat.csv` | The 33 features with `feature_id`, `feature_name`, `unit`. |
+| `make_33feat_dataset.py` | Rebuild script. Reads `raw157_feature_values_long_full.csv`, keeps every subject, writes NaN for `insufficient_within_subject_support` cells (asserts 51, all in the 9 added features), and cross-checks the 24 shared feature columns against `processed_dataset_v1_wide.csv` (1e-9 tolerance; the two files serialize floats with different precision, differences are <= 7e-15). |
+
+Because no subject is dropped, the 33-feature baseline reuses the **same splits as the 24-feature
+baseline**: `splits/cv_fold_assignments.csv`, `splits/heldout_ad_subjects.csv` (4 held-out AD:
+BEGAD-001, BEGAD-005, BEGAD-006, BEGAD-016). Config: `src/baseline/config_33feat.yaml`
+(`output/baseline_33feat/`).
+
 ## Provenance
 
 - Extraction inputs: `dataset/20250305/*.csv` (raw Tobii event exports) and `dataset/participants_20250305.csv`

@@ -1,0 +1,40 @@
+{
+  "timestamp_utc": "2026-10-28T19:09:30+00:00",
+  "host": "psbn9u2g3k1d",
+  "python": "3.12.3",
+  "command": "/home/paperspace/BEGAD_Norm/src/baseline/run_baselines.py --config src/baseline/config_33feat.yaml",
+  "git_commit": "56834bd4330f019cff343623f9ddcbba84b67cc8",
+  "git_dirty": true,
+  "config_sha256": "3679074ab17a1bf0ee190689599fa5e2bf82d848b46e254e51a616d58db0ab87",
+  "data_sha256": {
+    "wide": "cbcecbc739fa44461be6feb19f3d4ee3845b1d41194cd5c593fdcb33e8fb21a0",
+    "fold_assignments": "f5d9c94f458b31d0acefc538e21cfbaf33486606668be02a91652d2d9bd13beb",
+    "heldout_ad": "c2d5a86880dc9b3cc7786f6ebfb98dd968c95fec1283d239d6b58e6e9c0c648c"
+  },
+  "class_weight": "balanced",
+  "split": {
+    "n_folds": 4,
+    "seeds": [
+      42,
+      2026,
+      1,
+      0,
+      7,
+      123,
+      1234,
+      2024,
+      2025,
+      1337
+    ],
+    "heldout_ad_appended_to_every_val_fold": true
+  },
+  "packages": {
+    "numpy": "2.5.4",
+    "pandas": "3.1.0",
+    "scikit-learn": "1.9.1",
+    "scipy": "1.18.1",
+    "lightgbm": "4.7.0",
+    "PyYAML": "6.0.3"
+  },
+  "n_rows": 720
+}
