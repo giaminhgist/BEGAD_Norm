@@ -19,3 +19,9 @@ __pycache__/
 
 # Plotting venv for output/features figures
 .venv-figs/
+
+# Research-Agent local state (plans, tasks, runs, reviews, approvals, KB, memory)
+.research-agent/
+
+# ARIS reviewer config (local)
+.aris/
