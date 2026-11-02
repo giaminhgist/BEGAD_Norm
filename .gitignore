@@ -25,3 +25,6 @@ __pycache__/
 
 # ARIS reviewer config (local)
 .aris/
+.research-agent/runs/*/pip_freeze.txt
+.research-agent/sessions/
+.research-agent/kb/.index.sqlite

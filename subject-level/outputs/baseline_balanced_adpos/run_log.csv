@@ -1,5 +1,0 @@
-timestamp_utc,mode,datasets,problems,models,seeds,folds,n_rows,duration_s,status
-2026-10-13T22:15:29+00:00,smoke,processed_dataset,co_vs_mci,"logistic_regression,svm_rbf,svm_linear,fnn,qda,gnb",42,1,6,1.9,ok
-2026-10-13T22:15:41+00:00,full,processed_dataset,co_mci_ad,"logistic_regression,svm_rbf,svm_linear,fnn,qda,gnb",42,1,6,0.9,ok
-2026-10-13T22:22:26+00:00,full,processed_dataset,co_mci_ad,"logistic_regression,svm_rbf,svm_linear,fnn,qda,gnb",42,1,6,1.2,ok
-2026-10-13T22:30:14+00:00,full,processed_dataset,"co_vs_mci,co_vs_ad,co_mci_ad","logistic_regression,svm_rbf,svm_linear,fnn,qda,gnb","42,2026,1,0,7,123,1234,2024,2025,1337,2,3,5,10,21,777,2020,2021,2022,2023","1,2,3,4,5",1800,455.0,ok
