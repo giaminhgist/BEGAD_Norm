@@ -1,0 +1,16 @@
+# Research-Agent project settings (created by `ra init`). Values here override ~/.research-agent/config.toml.
+
+[project]
+name = "BEGAD_Norm"
+irb = ""
+
+[data]
+protected_paths = ["T5.xlsx", "T5_clean.xlsx", "T1235.xlsx", "T1235_clean.xlsx", "dataset", "dataset_v2"]
+sensitive_paths = []
+
+[budget]
+max_usd_per_session = 15.0
+max_usd_per_project = 100.0
+
+[autonomy]
+level = "semi"

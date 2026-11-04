@@ -1,0 +1,66 @@
+{
+  "T001": {
+    "id": "T001",
+    "title": "Analyze BEGAD_Norm repo and write Summary.md",
+    "agent": "writing",
+    "task_type": "write",
+    "plan_id": null,
+    "artifact_dir": ".research-agent/artifacts/T001",
+    "state": "done",
+    "created": 1793620995.3347304,
+    "history": [
+      {
+        "state": "planned",
+        "ts": 1793620995.3347304,
+        "note": ""
+      },
+      {
+        "state": "dispatched",
+        "ts": 1793620997.1030128,
+        "note": ""
+      },
+      {
+        "state": "artifact_ready",
+        "ts": 1793621350.6584532,
+        "note": ""
+      },
+      {
+        "state": "in_review",
+        "ts": 1793621359.9622204,
+        "note": ""
+      },
+      {
+        "state": "passed",
+        "ts": 1793622074.8501658,
+        "note": ""
+      },
+      {
+        "state": "done",
+        "ts": 1793622074.9313865,
+        "note": ""
+      }
+    ]
+  },
+  "T002": {
+    "id": "T002",
+    "title": "Plot 33 feature figures (3-group x 4-task) with pairwise Mann-Whitney significance",
+    "agent": "coding",
+    "task_type": "code",
+    "plan_id": null,
+    "artifact_dir": ".research-agent/artifacts/T002",
+    "state": "dispatched",
+    "created": 1793641494.787952,
+    "history": [
+      {
+        "state": "planned",
+        "ts": 1793641494.787952,
+        "note": ""
+      },
+      {
+        "state": "dispatched",
+        "ts": 1793641498.5125217,
+        "note": ""
+      }
+    ]
+  }
+}

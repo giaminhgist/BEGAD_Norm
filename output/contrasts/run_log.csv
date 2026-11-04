@@ -1,4 +1,0 @@
-timestamp_utc,mode,summary,n_rows,duration_s,status
-2026-10-28T21:04:18+00:00,smoke,"problems=co_mci_ad,co_vs_mci,co_vs_ad models=elasticnet,svm_rbf folds=1 reps=abs132,abs150,compact84",18,437.4,ok
-2026-10-28T21:57:47+00:00,full,"problems=co_mci_ad,co_vs_mci,co_vs_ad models=elasticnet,svm_rbf folds=1,2,3,4 reps=abs132,abs150,compact84",72,1702.6,ok
-2026-10-28T22:05:02+00:00,postprocess,merged long proba rows to wide; filled 3-class bacc cells from stored proba CSVs (validated vs stored recalls); see src/expcommon/postprocess_first_full_runs.py,24,0.0,ok
